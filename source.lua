@@ -855,6 +855,11 @@ do
 	Rayfield.Notifications.Template.Icon.Image = customAssets[tostring(77891951053543)]
 	Rayfield.Notifications.Template.Shadow.Image = customAssets[tostring(3523728077)]
 	Rayfield.Loading.Banner.Image = customAssets["ReverbBanner"]
+	Rayfield.Loading.Banner.AnchorPoint = Vector2.new(0.5, 0.5)
+	Rayfield.Loading.Banner.Position = UDim2.fromScale(0.5, 0.5)
+	Rayfield.Loading.Banner.Size = UDim2.new(0, 420, 0, 96)
+	Rayfield.Loading.Banner.ScaleType = Enum.ScaleType.Fit
+	Rayfield.Loading.Banner.BackgroundTransparency = 1
 
 end -- custom asset block
 
@@ -887,7 +892,7 @@ local dragOffset = 255
 local dragOffsetMobile = 150
 
 Rayfield.DisplayOrder = 100
-LoadingFrame.Version.Text = Release
+LoadingFrame.Version.Text = "Reverb Hub"
 
 -- Thanks to Latte Softworks for the Lucide integration for Roblox
 local Icons = useStudio and require(script.Parent.icons) or loadWithTimeout(rawBaseUrl.."icons.lua")
@@ -1015,6 +1020,15 @@ local function resolveIcon(icon)
 		return "rbxassetid://" .. asset.id, asset.imageRectOffset, asset.imageRectSize
 	else
 		return getAssetUri(icon), nil, nil
+	end
+end
+
+if Topbar:FindFirstChild('Settings') then
+	local success, img, rectOffset, rectSize = pcall(resolveIcon, "cog")
+	if success and img ~= "" then
+		Topbar.Settings.Image = img
+		Topbar.Settings.ImageRectOffset = rectOffset or Vector2.new(0, 0)
+		Topbar.Settings.ImageRectSize = rectSize or Vector2.new(0, 0)
 	end
 end
 
@@ -1698,17 +1712,14 @@ function RayfieldLibrary:CreateWindow(Settings)
 	LoadingFrame.Title.TextTransparency = 1
 	LoadingFrame.Subtitle.TextTransparency = 1
 
-	if Settings.ShowText then
-		MPrompt.Title.Text = 'Show '..Settings.ShowText
+	if MPrompt then
+		MPrompt.Title.Text = 'Show '..(Settings.ShowText or "Reverb")
 	end
 
 	LoadingFrame.Version.TextTransparency = 1
 	LoadingFrame.Title.Text = Settings.LoadingTitle or "Reverb"
 	LoadingFrame.Subtitle.Text = Settings.LoadingSubtitle or "Interface Suite"
-
-	if Settings.LoadingTitle ~= "ReverbLib Interface Suite" then
-		LoadingFrame.Version.Text = "ReverbLib UI"
-	end
+	LoadingFrame.Version.Text = "Reverb Hub"
 
 	if Settings.Icon and Settings.Icon ~= 0 and Topbar:FindFirstChild('Icon') then
 		Topbar.Icon.Visible = true
