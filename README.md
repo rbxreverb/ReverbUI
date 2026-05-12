@@ -17,8 +17,8 @@ Then use it the same way Rayfield is normally used:
 ```lua
 local Window = ReverbLib:CreateWindow({
    Name = "Reverb Hub",
-   LoadingTitle = "ReverbLib Interface Suite",
-   LoadingSubtitle = "by Reverb",
+   LoadingTitle = "Reverb",
+   LoadingSubtitle = "Loading",
    Theme = "Default",
    DisableReverbLibPrompts = true,
    DisableBuildWarnings = false,
@@ -35,16 +35,8 @@ local Window = ReverbLib:CreateWindow({
       RememberJoins = true
    },
 
-   KeySystem = false,
-   KeySettings = {
-      Title = "Reverb Hub",
-      Subtitle = "Key System",
-      Note = "No method of obtaining the key is provided",
-      FileName = "ReverbKey",
-      SaveKey = true,
-      GrabKeyFromSite = false,
-      Key = {"Hello"}
-   }
+   -- ReverbLib's built-in key system has been removed.
+   -- Run your own loader/key checks before creating this window.
 })
 
 local MainTab = Window:CreateTab("Main", "house")
@@ -91,6 +83,7 @@ The old Rayfield globals are still accepted as fallbacks for compatibility.
 - Public usage should refer to `ReverbLib`.
 - The default theme uses Reverb cyan `#00e2f8` on a dark premium base.
 - Config files save under `ReverbLib/Configurations` using `.rvbl`.
+- The built-in Rayfield key system has been removed so your loader can handle access separately.
 - Upstream analytics/reporting has been removed.
 - The upstream Apache-2.0 license is preserved.
 

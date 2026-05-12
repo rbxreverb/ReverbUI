@@ -5,8 +5,8 @@ local ReverbLib = loadstring(game:HttpGet('https://raw.githubusercontent.com/rbx
 local Window = ReverbLib:CreateWindow({
    Name = "ReverbLib Example Window",
    Icon = 0, -- Icon in Topbar. Can use Lucide Icons (string) or Roblox Image (number). 0 to use no icon (default).
-   LoadingTitle = "ReverbLib Interface Suite",
-   LoadingSubtitle = "by Reverb",
+   LoadingTitle = "Reverb",
+   LoadingSubtitle = "Loading",
    Theme = "Default",
 
    DisableReverbLibPrompts = true,
@@ -24,16 +24,8 @@ local Window = ReverbLib:CreateWindow({
       RememberJoins = true -- Set this to false to make them join the discord every time they load it up
    },
 
-   KeySystem = false, -- Set this to true to use our key system
-   KeySettings = {
-      Title = "Untitled",
-      Subtitle = "Key System",
-      Note = "No method of obtaining the key is provided", -- Use this to tell the user how to get a key
-      FileName = "Key", -- It is recommended to use something unique as other scripts using ReverbLib may overwrite your key file
-      SaveKey = true, -- The user's key will be saved, but if you change the key, they will be unable to use your script
-      GrabKeyFromSite = false, -- If this is true, set Key below to the RAW site you would like ReverbLib to get the key from
-      Key = {"Hello"} -- List of keys that will be accepted by the system, can be RAW file links (pastebin, github etc) or simple strings ("hello","key22")
-   }
+   -- ReverbLib's built-in key system has been removed.
+   -- Run your own loader/key checks before creating this window.
 })
 
 local Tab = Window:CreateTab("Tab Example", 4483362458) -- Title, Image
