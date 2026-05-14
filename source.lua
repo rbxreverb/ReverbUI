@@ -993,15 +993,6 @@ local function richTextEscape(value)
 	return value
 end
 
-local function isDiscordLinked(linkedDiscordId)
-	if linkedDiscordId == nil then
-		return false
-	end
-
-	local value = tostring(linkedDiscordId)
-	return value ~= "" and value ~= "0" and value ~= "Not specified"
-end
-
 local function resolveAccountInfo(Settings)
 	local accountSettings = Settings.Account
 	if accountSettings == false or (type(accountSettings) == "table" and accountSettings.Enabled == false) then
@@ -1041,7 +1032,6 @@ local function resolveAccountInfo(Settings)
 		SecondsLeft = secondsLeft,
 		TimeLeft = formatAccountTime(secondsLeft, isPremium),
 		LinkedDiscordID = linkedDiscordId,
-		DiscordLinked = isDiscordLinked(linkedDiscordId),
 		TotalExecutions = totalExecutions,
 		ShowInTitle = accountSettings.ShowInTitle ~= false,
 	}
@@ -1062,13 +1052,12 @@ end
 
 local function formatAccountDetails()
 	if not AccountInfo then
-		return "Plan: Free\nKey time left: Unknown\nDiscord: Not linked\nTotal executions with this key: Unknown"
+		return "Plan: Free\nKey time left: Unknown\nTotal executions with this key: Unknown"
 	end
 
 	local executions = AccountInfo.TotalExecutions ~= nil and tostring(AccountInfo.TotalExecutions) or "Unknown"
-	local discord = AccountInfo.DiscordLinked and "Linked" or "Not linked"
 
-	return "Plan: "..AccountInfo.Status.."\nKey time left: "..AccountInfo.TimeLeft.."\nDiscord: "..discord.."\nTotal executions with this key: "..executions
+	return "Plan: "..AccountInfo.Status.."\nKey time left: "..AccountInfo.TimeLeft.."\nTotal executions with this key: "..executions
 end
 
 local function formatAccountActionCopy()
