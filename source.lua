@@ -912,6 +912,8 @@ local PerformanceStats = {FPS = 0, Ping = 0}
 local StatsOverlay = nil
 local StatsOverlayText = nil
 local StatsParagraph = nil
+local AccountInfo = nil
+local AccountParagraph = nil
 local updateStatsOverlayTheme = function() end
 local setStatsOverlayVisible = function() end
 
@@ -934,6 +936,107 @@ local function normalizeThemeName(themeName)
 	return themeName == "Default" and "Reverb" or themeName
 end
 
+local function readGlobal(name)
+	if not _getgenv then
+		return nil
+	end
+
+	local success, value = pcall(function()
+		return _getgenv()[name]
+	end)
+
+	if success then
+		return value
+	end
+
+	return nil
+end
+
+local function formatAccountTime(secondsLeft)
+	secondsLeft = tonumber(secondsLeft)
+	if not secondsLeft or secondsLeft <= 0 then
+		return "Unknown"
+	end
+
+	if secondsLeft > 315360000 then
+		return "Never"
+	end
+
+	local days = math.floor(secondsLeft / 86400)
+	local hours = math.floor((secondsLeft % 86400) / 3600)
+	local minutes = math.floor((secondsLeft % 3600) / 60)
+
+	if days > 0 then
+		return tostring(days).." Days, "..tostring(hours).." Hours"
+	elseif hours > 0 then
+		return tostring(hours).." Hours, "..tostring(minutes).." Minutes"
+	end
+
+	return tostring(math.max(minutes, 1)).." Minutes"
+end
+
+local function resolveAccountInfo(Settings)
+	local accountSettings = Settings.Account
+	if accountSettings == false or (type(accountSettings) == "table" and accountSettings.Enabled == false) then
+		return {
+			Enabled = false,
+			IsPremium = false,
+			Status = "Free",
+			StatusTag = "[FREE]",
+			UserNote = "Not specified",
+			SecondsLeft = 0,
+			TimeLeft = "Unknown",
+			ShowInTitle = false,
+		}
+	end
+
+	accountSettings = type(accountSettings) == "table" and accountSettings or {}
+
+	local userNote = accountSettings.UserNote or accountSettings.userNote or readGlobal("Shared_LRM_UserNote") or "Not specified"
+	local secondsLeft = accountSettings.SecondsLeft or accountSettings.secondsLeft or readGlobal("Shared_LRM_SecondsLeft") or 0
+	local linkedDiscordId = accountSettings.LinkedDiscordID or accountSettings.linkedDiscordId or readGlobal("Shared_LRM_LinkedDiscordID")
+	local totalExecutions = accountSettings.TotalExecutions or accountSettings.totalExecutions or readGlobal("Shared_LRM_TotalExecutions")
+	local isPremium = accountSettings.IsPremium
+
+	if type(isPremium) ~= "boolean" then
+		isPremium = userNote ~= "Ad Reward" and userNote ~= "Not specified"
+	end
+
+	return {
+		Enabled = true,
+		IsPremium = isPremium,
+		Status = isPremium and "Premium" or "Free",
+		StatusTag = isPremium and "[PREMIUM]" or "[FREE]",
+		UserNote = userNote,
+		SecondsLeft = secondsLeft,
+		TimeLeft = formatAccountTime(secondsLeft),
+		LinkedDiscordID = linkedDiscordId,
+		TotalExecutions = totalExecutions,
+		ShowInTitle = accountSettings.ShowInTitle ~= false,
+	}
+end
+
+local function formatWindowTitle(windowName)
+	windowName = tostring(windowName or "Reverb")
+	if not AccountInfo or not AccountInfo.Enabled or not AccountInfo.ShowInTitle then
+		return windowName
+	end
+
+	if string.find(windowName, "%[PREMIUM%]") or string.find(windowName, "%[FREE%]") then
+		return windowName
+	end
+
+	return windowName.." "..AccountInfo.StatusTag
+end
+
+local function formatAccountDetails()
+	if not AccountInfo then
+		return "Status: Free\nTime Left: Unknown"
+	end
+
+	return "Status: "..AccountInfo.Status.."\nTime Left: "..AccountInfo.TimeLeft
+end
+
 local function ChangeTheme(Theme)
 	if typeof(Theme) == 'string' then
 		Theme = normalizeThemeName(Theme)
@@ -954,6 +1057,9 @@ local function ChangeTheme(Theme)
 	Rayfield.Main.Topbar.ChangeSize.ImageColor3 = SelectedTheme.TextColor
 	Rayfield.Main.Topbar.Hide.ImageColor3 = SelectedTheme.TextColor
 	Rayfield.Main.Topbar.Search.ImageColor3 = SelectedTheme.TextColor
+	if Topbar:FindFirstChild('Account') then
+		Rayfield.Main.Topbar.Account.ImageColor3 = SelectedTheme.TextColor
+	end
 	if Topbar:FindFirstChild('Settings') then
 		Rayfield.Main.Topbar.Settings.ImageColor3 = SelectedTheme.TextColor
 		Rayfield.Main.Topbar.Divider.BackgroundColor3 = SelectedTheme.ElementStroke
@@ -1154,6 +1260,34 @@ if Topbar:FindFirstChild('Settings') then
 		Topbar.Settings.Image = img
 		Topbar.Settings.ImageRectOffset = rectOffset or Vector2.new(0, 0)
 		Topbar.Settings.ImageRectSize = rectSize or Vector2.new(0, 0)
+	end
+end
+
+if not Topbar:FindFirstChild('Account') then
+	local sourceButton = Topbar:FindFirstChild('Settings') or Topbar:FindFirstChild('Search')
+	if sourceButton then
+		local accountButton = sourceButton:Clone()
+		accountButton.Name = "Account"
+		accountButton.Visible = true
+		accountButton.ImageTransparency = 1
+		accountButton.ImageColor3 = SelectedTheme.TextColor
+		accountButton.Position = UDim2.new(
+			Topbar.Search.Position.X.Scale,
+			Topbar.Search.Position.X.Offset - 30,
+			Topbar.Search.Position.Y.Scale,
+			Topbar.Search.Position.Y.Offset
+		)
+
+		local success, img, rectOffset, rectSize = pcall(resolveIcon, "circle-user-round")
+		if success and img ~= "" then
+			accountButton.Image = img
+			accountButton.ImageRectOffset = rectOffset or Vector2.new(0, 0)
+			accountButton.ImageRectSize = rectSize or Vector2.new(0, 0)
+		else
+			accountButton.Image = ""
+		end
+
+		accountButton.Parent = Topbar
 	end
 end
 
@@ -1734,6 +1868,31 @@ local function updateSetting(category: string, setting: string, value: any)
 	saveSettings()
 end
 
+local function createAccount(window)
+	if not AccountInfo or not AccountInfo.Enabled then
+		if Topbar:FindFirstChild('Account') then
+			Topbar.Account.Visible = false
+		end
+		return
+	end
+
+	local newTab = window:CreateTab('Reverb Account', "circle-user-round", true)
+
+	if TabList['Reverb Account'] then
+		TabList['Reverb Account'].LayoutOrder = 999
+	end
+
+	if Elements['Reverb Account'] then
+		Elements['Reverb Account'].LayoutOrder = 999
+	end
+
+	newTab:CreateSection("Account")
+	AccountParagraph = newTab:CreateParagraph({
+		Title = "License",
+		Content = formatAccountDetails()
+	})
+end
+
 local function createSettings(window)
 	if not (writefile and isfile and readfile and isfolder and makefolder) and not useStudio then
 		if Topbar['Settings'] then Topbar.Settings.Visible = false end
@@ -1829,6 +1988,7 @@ function RayfieldLibrary:CreateWindow(Settings)
 	end
 
 	if getgenv then getgenv().reverbLibCached = true end
+	AccountInfo = resolveAccountInfo(Settings)
 
 	if not correctBuild and not Settings.DisableBuildWarnings then
 		task.delay(3, 
@@ -1855,7 +2015,7 @@ function RayfieldLibrary:CreateWindow(Settings)
 
 	ensureFolder(RayfieldFolder)
 
-	Topbar.Title.Text = Settings.Name
+	Topbar.Title.Text = formatWindowTitle(Settings.Name)
 
 	Main.Size = UDim2.new(0, 420, 0, 100)
 	Main.Visible = true
@@ -1989,6 +2149,20 @@ function RayfieldLibrary:CreateWindow(Settings)
 	Notifications.Template.Visible = false
 	Notifications.Visible = true
 	Rayfield.Enabled = true
+	pcall(function()
+		Rayfield:SetAttribute("ReverbUI", true)
+		Rayfield:SetAttribute("ReverbUILoaded", true)
+	end)
+	if not Rayfield:FindFirstChild("ReverbUI_Loaded") then
+		local marker = Instance.new("BoolValue")
+		marker.Name = "ReverbUI_Loaded"
+		marker.Value = true
+		marker.Parent = Rayfield
+	end
+	if getgenv then
+		getgenv().ReverbUILoaded = true
+		getgenv().ReverbUIAccountStatus = AccountInfo and AccountInfo.Status or "Free"
+	end
 
 	task.wait(0.5)
 	TweenService:Create(Main, TweenInfo.new(0.7, Enum.EasingStyle.Exponential), {BackgroundTransparency = 0}):Play()
@@ -3553,6 +3727,9 @@ function RayfieldLibrary:CreateWindow(Settings)
 	Topbar.CornerRepair.BackgroundTransparency = 1
 	Topbar.Title.TextTransparency = 1
 	Topbar.Search.ImageTransparency = 1
+	if Topbar:FindFirstChild('Account') then
+		Topbar.Account.ImageTransparency = 1
+	end
 	if Topbar:FindFirstChild('Settings') then
 		Topbar.Settings.ImageTransparency = 1
 	end
@@ -3570,6 +3747,10 @@ function RayfieldLibrary:CreateWindow(Settings)
 	task.wait(0.05)
 	TweenService:Create(Topbar.Search, TweenInfo.new(0.6, Enum.EasingStyle.Exponential), {ImageTransparency = 0.8}):Play()
 	task.wait(0.05)
+	if Topbar:FindFirstChild('Account') then
+		TweenService:Create(Topbar.Account, TweenInfo.new(0.6, Enum.EasingStyle.Exponential), {ImageTransparency = 0.8}):Play()
+		task.wait(0.05)
+	end
 	if Topbar:FindFirstChild('Settings') then
 		TweenService:Create(Topbar.Settings, TweenInfo.new(0.6, Enum.EasingStyle.Exponential), {ImageTransparency = 0.8}):Play()
 		task.wait(0.05)
@@ -3593,6 +3774,7 @@ function RayfieldLibrary:CreateWindow(Settings)
 	end
 
 	local success, result = pcall(function()
+		createAccount(Window)
 		createSettings(Window)
 	end)
 
@@ -3697,25 +3879,38 @@ Topbar.Search.MouseButton1Click:Connect(function()
 	end)
 end)
 
+local function openInternalTab(tabName)
+	task.spawn(function()
+		if not Elements:FindFirstChild(tabName) then
+			return
+		end
+
+		for _, OtherTabButton in ipairs(TabList:GetChildren()) do
+			if OtherTabButton.Name ~= "Template" and OtherTabButton.ClassName == "Frame" and OtherTabButton.Name ~= "Placeholder" then
+				TweenService:Create(OtherTabButton, TweenInfo.new(0.7, Enum.EasingStyle.Exponential), {BackgroundColor3 = SelectedTheme.TabBackground}):Play()
+				TweenService:Create(OtherTabButton.Title, TweenInfo.new(0.7, Enum.EasingStyle.Exponential), {TextColor3 = SelectedTheme.TabTextColor}):Play()
+				TweenService:Create(OtherTabButton.Image, TweenInfo.new(0.7, Enum.EasingStyle.Exponential), {ImageColor3 = SelectedTheme.TabTextColor}):Play()
+				TweenService:Create(OtherTabButton, TweenInfo.new(0.7, Enum.EasingStyle.Exponential), {BackgroundTransparency = 0.7}):Play()
+				TweenService:Create(OtherTabButton.Title, TweenInfo.new(0.7, Enum.EasingStyle.Exponential), {TextTransparency = 0.2}):Play()
+				TweenService:Create(OtherTabButton.Image, TweenInfo.new(0.7, Enum.EasingStyle.Exponential), {ImageTransparency = 0.2}):Play()
+				TweenService:Create(OtherTabButton.UIStroke, TweenInfo.new(0.7, Enum.EasingStyle.Exponential), {Transparency = 0.5}):Play()
+			end
+		end
+
+		Elements.UIPageLayout:JumpTo(Elements[tabName])
+	end)
+end
+
+if Topbar:FindFirstChild('Account') then
+	Topbar.Account.MouseButton1Click:Connect(function()
+		openInternalTab('Reverb Account')
+	end)
+end
+
 if Topbar:FindFirstChild('Settings') then
 	Topbar.Settings.MouseButton1Click:Connect(function()
-		task.spawn(function()
-			for _, OtherTabButton in ipairs(TabList:GetChildren()) do
-				if OtherTabButton.Name ~= "Template" and OtherTabButton.ClassName == "Frame" and OtherTabButton.Name ~= "Placeholder" then
-					TweenService:Create(OtherTabButton, TweenInfo.new(0.7, Enum.EasingStyle.Exponential), {BackgroundColor3 = SelectedTheme.TabBackground}):Play()
-					TweenService:Create(OtherTabButton.Title, TweenInfo.new(0.7, Enum.EasingStyle.Exponential), {TextColor3 = SelectedTheme.TabTextColor}):Play()
-					TweenService:Create(OtherTabButton.Image, TweenInfo.new(0.7, Enum.EasingStyle.Exponential), {ImageColor3 = SelectedTheme.TabTextColor}):Play()
-					TweenService:Create(OtherTabButton, TweenInfo.new(0.7, Enum.EasingStyle.Exponential), {BackgroundTransparency = 0.7}):Play()
-					TweenService:Create(OtherTabButton.Title, TweenInfo.new(0.7, Enum.EasingStyle.Exponential), {TextTransparency = 0.2}):Play()
-					TweenService:Create(OtherTabButton.Image, TweenInfo.new(0.7, Enum.EasingStyle.Exponential), {ImageTransparency = 0.2}):Play()
-					TweenService:Create(OtherTabButton.UIStroke, TweenInfo.new(0.7, Enum.EasingStyle.Exponential), {Transparency = 0.5}):Play()
-				end
-			end
-
-			Elements.UIPageLayout:JumpTo(Elements['ReverbLib Settings'])
-		end)
+		openInternalTab('ReverbLib Settings')
 	end)
-
 end
 
 
