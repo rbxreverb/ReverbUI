@@ -914,6 +914,13 @@ local StatsOverlayText = nil
 local StatsParagraph = nil
 local AccountInfo = nil
 local AccountParagraph = nil
+local ReverbBrandColor = Color3.fromRGB(0, 226, 248)
+local ReverbMutedAccountColor = Color3.fromRGB(95, 108, 118)
+local AccountLinks = {
+	Premium = "https://rbxreverb.com/product/premium",
+	Key = "https://rbxreverb.com/getkey",
+	Discord = "https://discord.com/invite/TpJd6E8vKZ",
+}
 local updateStatsOverlayTheme = function() end
 local setStatsOverlayVisible = function() end
 
@@ -959,7 +966,7 @@ local function formatAccountTime(secondsLeft)
 	end
 
 	if secondsLeft > 315360000 then
-		return "Never"
+		return "Lifetime Access"
 	end
 
 	local days = math.floor(secondsLeft / 86400)
@@ -973,6 +980,25 @@ local function formatAccountTime(secondsLeft)
 	end
 
 	return tostring(math.max(minutes, 1)).." Minutes"
+end
+
+local function richTextEscape(value)
+	value = tostring(value or "")
+	value = string.gsub(value, "&", "&amp;")
+	value = string.gsub(value, "<", "&lt;")
+	value = string.gsub(value, ">", "&gt;")
+	value = string.gsub(value, "\"", "&quot;")
+	value = string.gsub(value, "'", "&apos;")
+	return value
+end
+
+local function isDiscordLinked(linkedDiscordId)
+	if linkedDiscordId == nil then
+		return false
+	end
+
+	local value = tostring(linkedDiscordId)
+	return value ~= "" and value ~= "0" and value ~= "Not specified"
 end
 
 local function resolveAccountInfo(Settings)
@@ -1007,10 +1033,14 @@ local function resolveAccountInfo(Settings)
 		IsPremium = isPremium,
 		Status = isPremium and "Premium" or "Free",
 		StatusTag = isPremium and "[PREMIUM]" or "[FREE]",
+		TitleStatusTag = isPremium and '<font color="#00e2f8">[PREMIUM]</font>' or '<font color="#5f6c76">[FREE]</font>',
+		BadgeText = isPremium and "Premium Access" or "Free Access",
+		BadgeColor = isPremium and ReverbBrandColor or ReverbMutedAccountColor,
 		UserNote = userNote,
 		SecondsLeft = secondsLeft,
 		TimeLeft = formatAccountTime(secondsLeft),
 		LinkedDiscordID = linkedDiscordId,
+		DiscordLinked = isDiscordLinked(linkedDiscordId),
 		TotalExecutions = totalExecutions,
 		ShowInTitle = accountSettings.ShowInTitle ~= false,
 	}
@@ -1026,15 +1056,37 @@ local function formatWindowTitle(windowName)
 		return windowName
 	end
 
-	return windowName.." "..AccountInfo.StatusTag
+	return richTextEscape(windowName).." "..AccountInfo.TitleStatusTag
 end
 
 local function formatAccountDetails()
 	if not AccountInfo then
-		return "Status: Free\nTime Left: Unknown"
+		return "Expires in: Unknown\nDiscord: Not linked\nTotal executions with this key: Unknown"
 	end
 
-	return "Status: "..AccountInfo.Status.."\nTime Left: "..AccountInfo.TimeLeft
+	local executions = AccountInfo.TotalExecutions ~= nil and tostring(AccountInfo.TotalExecutions) or "Unknown"
+	local discord = AccountInfo.DiscordLinked and "Linked" or "Not linked"
+
+	return "Expires in: "..AccountInfo.TimeLeft.."\nDiscord: "..discord.."\nTotal executions with this key: "..executions
+end
+
+local function copyAccountLink(label, url)
+	if setclipboard then
+		setclipboard(url)
+		RayfieldLibrary:Notify({
+			Title = "Reverb Account",
+			Content = label.." link copied.",
+			Duration = 4,
+			Image = "copy",
+		})
+	else
+		RayfieldLibrary:Notify({
+			Title = "Clipboard Unavailable",
+			Content = "Your executor does not support copying links.",
+			Duration = 5,
+			Image = "alert-circle",
+		})
+	end
 end
 
 local function ChangeTheme(Theme)
@@ -1887,9 +1939,34 @@ local function createAccount(window)
 	end
 
 	newTab:CreateSection("Account")
+	newTab:CreateLabel(AccountInfo.BadgeText, "badge-check", AccountInfo.BadgeColor, true)
 	AccountParagraph = newTab:CreateParagraph({
 		Title = "License",
 		Content = formatAccountDetails()
+	})
+
+	newTab:CreateSection("Links")
+	if not AccountInfo.IsPremium then
+		newTab:CreateButton({
+			Name = "Get Premium",
+			Callback = function()
+				copyAccountLink("Premium", AccountLinks.Premium)
+			end,
+		})
+	end
+
+	newTab:CreateButton({
+		Name = "Get / Renew Key",
+		Callback = function()
+			copyAccountLink("Key", AccountLinks.Key)
+		end,
+	})
+
+	newTab:CreateButton({
+		Name = "Copy Discord",
+		Callback = function()
+			copyAccountLink("Discord", AccountLinks.Discord)
+		end,
 	})
 end
 
@@ -2015,6 +2092,7 @@ function RayfieldLibrary:CreateWindow(Settings)
 
 	ensureFolder(RayfieldFolder)
 
+	Topbar.Title.RichText = true
 	Topbar.Title.Text = formatWindowTitle(Settings.Name)
 
 	Main.Size = UDim2.new(0, 420, 0, 100)
