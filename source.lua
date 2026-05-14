@@ -920,6 +920,7 @@ local AccountLinks = {
 	Premium = "https://rbxreverb.com/product/premium",
 	Key = "https://rbxreverb.com/getkey",
 	Discord = "https://discord.com/invite/TpJd6E8vKZ",
+	Robux = "https://www.roblox.com/games/77740070380449/",
 }
 local updateStatsOverlayTheme = function() end
 local setStatsOverlayVisible = function() end
@@ -959,14 +960,14 @@ local function readGlobal(name)
 	return nil
 end
 
-local function formatAccountTime(secondsLeft)
+local function formatAccountTime(secondsLeft, isPremium)
 	secondsLeft = tonumber(secondsLeft)
 	if not secondsLeft or secondsLeft <= 0 then
 		return "Unknown"
 	end
 
 	if secondsLeft > 315360000 then
-		return "Lifetime Access"
+		return isPremium and "Lifetime Access" or "Unknown"
 	end
 
 	local days = math.floor(secondsLeft / 86400)
@@ -1034,11 +1035,11 @@ local function resolveAccountInfo(Settings)
 		Status = isPremium and "Premium" or "Free",
 		StatusTag = isPremium and "[PREMIUM]" or "[FREE]",
 		TitleStatusTag = isPremium and '<font color="#00e2f8">[PREMIUM]</font>' or '<font color="#5f6c76">[FREE]</font>',
-		BadgeText = isPremium and "Premium Access" or "Free Access",
+		BadgeText = isPremium and "Reverb Premium Access" or "Reverb Free Access",
 		BadgeColor = isPremium and ReverbBrandColor or ReverbMutedAccountColor,
 		UserNote = userNote,
 		SecondsLeft = secondsLeft,
-		TimeLeft = formatAccountTime(secondsLeft),
+		TimeLeft = formatAccountTime(secondsLeft, isPremium),
 		LinkedDiscordID = linkedDiscordId,
 		DiscordLinked = isDiscordLinked(linkedDiscordId),
 		TotalExecutions = totalExecutions,
@@ -1966,6 +1967,27 @@ local function createAccount(window)
 		Name = "Copy Discord",
 		Callback = function()
 			copyAccountLink("Discord", AccountLinks.Discord)
+		end,
+	})
+
+	newTab:CreateSection("Keys")
+	newTab:CreateLabel("Reverb Premium Keys", "badge-dollar-sign", ReverbBrandColor, true)
+	newTab:CreateParagraph({
+		Title = "Key Pricing Menu",
+		Content = "1 Day: 149 Robux\n7 Days: $4.99 / 699 Robux\n30 Days: $9.99 / 1249 Robux\nLifetime: $19.99 / 3199 Robux\n\nSelect your preferred payment method below."
+	})
+
+	newTab:CreateButton({
+		Name = "Pay with Cash",
+		Callback = function()
+			copyAccountLink("Store", AccountLinks.Premium)
+		end,
+	})
+
+	newTab:CreateButton({
+		Name = "Pay with Robux",
+		Callback = function()
+			copyAccountLink("Robux Purchase Game", AccountLinks.Robux)
 		end,
 	})
 end
