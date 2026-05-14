@@ -129,15 +129,19 @@ local ConfigurationExtension = ".rvbl"
 local settingsTable = {
 	General = {
 		-- if needs be in order just make getSetting(name)
-		rayfieldOpen = {Type = 'bind', Value = 'K', Name = 'ReverbLib Keybind'},
+		rayfieldOpen = {Type = 'bind', Value = 'K', Name = 'Reverb UI Keybind'},
 		-- buildwarnings
 		-- rayfieldprompts
 
 	},
-	System = {
-		usageAnalytics = {Type = 'toggle', Value = false, Name = 'Anonymised Analytics'},
+	Appearance = {
+		theme = {Type = 'dropdown', Value = 'Reverb', Name = 'Theme'},
+	},
+	Performance = {
+		statsOverlay = {Type = 'toggle', Value = false, Name = 'Show FPS / Ping Overlay'},
 	}
 }
+local settingsCategoryOrder = {"General", "Appearance", "Performance"}
 
 -- Settings that have been overridden by the developer. These will not be saved to the user's configuration file
 -- Overridden settings always take precedence over settings in the configuration file, and are cleared if the user changes the setting in the UI
@@ -152,11 +156,6 @@ local function getSetting(category: string, name: string): any
 	elseif settingsTable[category][name] ~= nil then
 		return settingsTable[category][name].Value
 	end
-end
-
--- If requests/analytics have been disabled by developer, set the user-facing setting to false as well
-if requestsDisabled then
-	overrideSetting("System", "usageAnalytics", false)
 end
 
 local HttpService = getService('HttpService')
@@ -215,7 +214,7 @@ local function loadSettings()
 		-- for debug in studio
 		if useStudio then
 			file = [[
-	{"General":{"rayfieldOpen":{"Value":"K","Type":"bind","Name":"ReverbLib Keybind","Element":{"HoldToInteract":false,"Ext":true,"Name":"ReverbLib Keybind","Set":null,"CallOnChange":true,"Callback":null,"CurrentKeybind":"K"}}},"System":{"usageAnalytics":{"Value":false,"Type":"toggle","Name":"Anonymised Analytics","Element":{"Ext":true,"Name":"Anonymised Analytics","Set":null,"CurrentValue":false,"Callback":null}}}}
+	{"General":{"rayfieldOpen":{"Value":"K","Type":"bind","Name":"Reverb UI Keybind"}},"Appearance":{"theme":{"Value":"Reverb","Type":"dropdown","Name":"Theme"}},"Performance":{"statsOverlay":{"Value":false,"Type":"toggle","Name":"Show FPS / Ping Overlay"}}}
 ]]
 		end
 
@@ -683,6 +682,7 @@ local RayfieldLibrary = {
 }
 
 RayfieldLibrary.Theme.Reverb = RayfieldLibrary.Theme.Default
+RayfieldLibrary.Theme.Default = RayfieldLibrary.Theme.Reverb
 
 
 
@@ -907,13 +907,43 @@ local searchOpen = false
 local Notifications = Rayfield.Notifications
 local keybindConnections = {} -- For storing keybind connections to disconnect when Rayfield is destroyed
 
-local SelectedTheme = RayfieldLibrary.Theme.Default
+local SelectedTheme = RayfieldLibrary.Theme.Reverb
+local PerformanceStats = {FPS = 0, Ping = 0}
+local StatsOverlay = nil
+local StatsOverlayText = nil
+local StatsParagraph = nil
+local updateStatsOverlayTheme = function() end
+local setStatsOverlayVisible = function() end
+
+local function getThemeNames()
+	local names = {}
+	for themeName, theme in pairs(RayfieldLibrary.Theme) do
+		if themeName ~= "Default" and type(theme) == "table" then
+			table.insert(names, themeName)
+		end
+	end
+	table.sort(names, function(a, b)
+		if a == "Reverb" then return true end
+		if b == "Reverb" then return false end
+		return a < b
+	end)
+	return names
+end
+
+local function normalizeThemeName(themeName)
+	return themeName == "Default" and "Reverb" or themeName
+end
 
 local function ChangeTheme(Theme)
 	if typeof(Theme) == 'string' then
+		Theme = normalizeThemeName(Theme)
 		SelectedTheme = RayfieldLibrary.Theme[Theme]
 	elseif typeof(Theme) == 'table' then
 		SelectedTheme = Theme
+	end
+
+	if not SelectedTheme then
+		error("Theme not found")
 	end
 
 	Rayfield.Main.BackgroundColor3 = SelectedTheme.Background
@@ -953,7 +983,98 @@ local function ChangeTheme(Theme)
 			end
 		end
 	end
+
+	updateStatsOverlayTheme()
 end
+
+local function formatPerformanceStats()
+	return "FPS: "..tostring(PerformanceStats.FPS).." | Ping: "..tostring(PerformanceStats.Ping).." ms"
+end
+
+local function updateStatsText()
+	local text = formatPerformanceStats()
+	if StatsOverlayText then
+		StatsOverlayText.Text = text
+	end
+	if StatsParagraph then
+		StatsParagraph:Set({
+			Title = "Live Performance",
+			Content = text
+		})
+	end
+end
+
+local function ensureStatsOverlay()
+	if StatsOverlay then
+		return
+	end
+
+	StatsOverlay = Instance.new("Frame")
+	StatsOverlay.Name = "ReverbStatsOverlay"
+	StatsOverlay.AnchorPoint = Vector2.new(1, 0)
+	StatsOverlay.Position = UDim2.new(1, -16, 0, 16)
+	StatsOverlay.Size = UDim2.new(0, 170, 0, 34)
+	StatsOverlay.Visible = false
+	StatsOverlay.Parent = Rayfield
+
+	local corner = Instance.new("UICorner")
+	corner.CornerRadius = UDim.new(0, 8)
+	corner.Parent = StatsOverlay
+
+	local stroke = Instance.new("UIStroke")
+	stroke.Thickness = 1
+	stroke.Parent = StatsOverlay
+
+	StatsOverlayText = Instance.new("TextLabel")
+	StatsOverlayText.Name = "Stats"
+	StatsOverlayText.BackgroundTransparency = 1
+	StatsOverlayText.Size = UDim2.new(1, -20, 1, 0)
+	StatsOverlayText.Position = UDim2.new(0, 10, 0, 0)
+	StatsOverlayText.Font = Enum.Font.GothamMedium
+	StatsOverlayText.TextSize = 13
+	StatsOverlayText.TextXAlignment = Enum.TextXAlignment.Center
+	StatsOverlayText.TextYAlignment = Enum.TextYAlignment.Center
+	StatsOverlayText.Parent = StatsOverlay
+
+	updateStatsOverlayTheme()
+	updateStatsText()
+end
+
+updateStatsOverlayTheme = function()
+	if not StatsOverlay then
+		return
+	end
+
+	StatsOverlay.BackgroundColor3 = SelectedTheme.Background
+	StatsOverlay.BackgroundTransparency = 0.08
+	StatsOverlay.UIStroke.Color = SelectedTheme.ElementStroke
+	if StatsOverlayText then
+		StatsOverlayText.TextColor3 = SelectedTheme.TextColor
+	end
+end
+
+setStatsOverlayVisible = function(visible)
+	ensureStatsOverlay()
+	StatsOverlay.Visible = visible and true or false
+end
+
+local frameCount = 0
+local elapsed = 0
+RunService.RenderStepped:Connect(function(deltaTime)
+	frameCount += 1
+	elapsed += deltaTime
+	if elapsed >= 1 then
+		PerformanceStats.FPS = math.floor(frameCount / elapsed + 0.5)
+		local ping = 0
+		pcall(function()
+			ping = math.floor(Players.LocalPlayer:GetNetworkPing() * 1000 + 0.5)
+		end)
+		PerformanceStats.Ping = ping
+		frameCount = 0
+		elapsed = 0
+		updateStatsText()
+	end
+end)
 
 local function getIcon(name : string): {id: number, imageRectSize: Vector2, imageRectOffset: Vector2}
 	if not Icons then
@@ -1601,6 +1722,15 @@ local function updateSetting(category: string, setting: string, value: any)
 	end
 	settingsTable[category][setting].Value = value
 	overriddenSettings[category .. "." .. setting] = nil -- If user changes an overriden setting, remove the override
+
+	if category == "Appearance" and setting == "theme" then
+		value = normalizeThemeName(value)
+		settingsTable[category][setting].Value = value
+		pcall(ChangeTheme, value)
+	elseif category == "Performance" and setting == "statsOverlay" then
+		setStatsOverlayVisible(value)
+	end
+
 	saveSettings()
 end
 
@@ -1623,7 +1753,8 @@ local function createSettings(window)
 	end
 
 	-- Create sections and elements
-	for categoryName, settingCategory in pairs(settingsTable) do
+	for _, categoryName in ipairs(settingsCategoryOrder) do
+		local settingCategory = settingsTable[categoryName]
 		newTab:CreateSection(categoryName)
 
 		for settingName, setting in pairs(settingCategory) do
@@ -1647,6 +1778,18 @@ local function createSettings(window)
 						updateSetting(categoryName, settingName, Value)
 					end,
 				})
+			elseif setting.Type == 'dropdown' then
+				setting.Element = newTab:CreateDropdown({
+					Name = setting.Name,
+					Options = setting.Options or getThemeNames(),
+					CurrentOption = {setting.Value},
+					MultipleOptions = false,
+					Ext = true,
+					Callback = function(Value)
+						local selected = type(Value) == "table" and Value[1] or Value
+						updateSetting(categoryName, settingName, selected)
+					end,
+				})
 			elseif setting.Type == 'bind' then
 				setting.Element = newTab:CreateKeybind({
 					Name = setting.Name,
@@ -1662,8 +1805,21 @@ local function createSettings(window)
 		end
 	end
 
+	StatsParagraph = newTab:CreateParagraph({
+		Title = "Live Performance",
+		Content = formatPerformanceStats()
+	})
+
 	settingsCreated = true
 	loadSettings()
+	local selectedTheme = normalizeThemeName(getSetting("Appearance", "theme") or "Reverb")
+	settingsTable.Appearance.theme.Value = selectedTheme
+	if settingsTable.Appearance.theme.Element then
+		settingsTable.Appearance.theme.Element:Set(selectedTheme)
+	end
+	pcall(ChangeTheme, selectedTheme)
+	setStatsOverlayVisible(getSetting("Performance", "statsOverlay"))
+	updateStatsText()
 	saveSettings()
 end
 
@@ -1742,7 +1898,7 @@ function RayfieldLibrary:CreateWindow(Settings)
 	if Settings.Theme then
 		local success, result = pcall(ChangeTheme, Settings.Theme)
 		if not success then
-			local success, result2 = pcall(ChangeTheme, 'Default')
+			local success, result2 = pcall(ChangeTheme, 'Reverb')
 			if not success then
 				warn('CRITICAL ERROR - NO DEFAULT THEME')
 				print(result2)
@@ -3442,46 +3598,6 @@ function RayfieldLibrary:CreateWindow(Settings)
 
 	if not success then warn('ReverbLib had an issue creating settings.') end
 
-	-- Report after createSettings so loadSettings() has run and usageAnalytics reflects the user's saved preference
-	if reporter and getSetting("System", "usageAnalytics") then
-		local themeName = "Default"
-		if Settings.Theme then
-			if type(Settings.Theme) == "string" then
-				themeName = Settings.Theme
-			elseif type(Settings.Theme) == "table" then
-				themeName = "Custom"
-			end
-		end
-
-		local discordInvite = nil
-		if Settings.Discord and Settings.Discord.Enabled and Settings.Discord.Invite and Settings.Discord.Invite ~= "" then
-			local raw = tostring(Settings.Discord.Invite)
-			-- Normalize: strip URL prefixes to extract just the invite code
-			discordInvite = (raw:match("discord%.gg/([%w%-]+)") or raw:match("discord%.com/invite/([%w%-]+)") or raw):sub(1, 32)
-		end
-
-		local sampleSend = false
-
-		-- Random Sampling Test
-		if not Settings.ScriptID and math.random() > 0.4 then
-			sampleSend = true
-		end
-
-		--if Settings.ScriptID then
-			reporter:windowCreated({
-				script_name        = Settings.Name or "Unknown",
-				script_version     = Release,
-				interface_version  = InterfaceBuild,
-				theme              = themeName,
-				is_mobile          = useMobileSizing and true or false,
-				discord_invite     = discordInvite,
-				config_saving      = (Settings.ConfigurationSaving and Settings.ConfigurationSaving.Enabled) and true or false,
-				script_id          = Settings.ScriptID or sampleSend and 'sid_tzfyxawonjx9' or nil,
-				verification_token = Settings.VerificationToken,
-			})
-		--end
-	end
-
 	return Window
 end
 
@@ -3695,7 +3811,7 @@ if useStudio then
 	--local Window = RayfieldLibrary:CreateWindow({
 	--	Name = "ReverbLib Example Window",
 	--	LoadingTitle = "ReverbLib Interface Suite",
-	--	Theme = 'Default',
+	--	Theme = 'Reverb',
 	--	Icon = 0,
 	--	LoadingSubtitle = "by Reverb",
 	--	ConfigurationSaving = {
@@ -3817,7 +3933,7 @@ if useStudio then
 	--local Dropdown = Tab:CreateDropdown({
 	--	Name = "Theme",
 	--	Options = thoptions,
-	--	CurrentOption = {"Default"},
+	--	CurrentOption = {"Reverb"},
 	--	MultipleOptions = false,
 	--	Flag = "Dropdown1", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
 	--	Callback = function(Options)
