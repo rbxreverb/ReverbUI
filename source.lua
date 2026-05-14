@@ -854,10 +854,10 @@ do
 	Rayfield.Main.Search.Shadow.Image = customAssets[tostring(5587865193)]
 	Rayfield.Notifications.Template.Icon.Image = customAssets[tostring(77891951053543)]
 	Rayfield.Notifications.Template.Shadow.Image = customAssets[tostring(3523728077)]
-	Rayfield.Loading.Banner.Image = customAssets["ReverbBanner"]
+	Rayfield.Loading.Banner.Image = customAssets["ReverbIcon"]
 	Rayfield.Loading.Banner.AnchorPoint = Vector2.new(0.5, 0.5)
 	Rayfield.Loading.Banner.Position = UDim2.fromScale(0.5, 0.5)
-	Rayfield.Loading.Banner.Size = UDim2.new(0, 420, 0, 96)
+	Rayfield.Loading.Banner.Size = UDim2.new(0, 96, 0, 96)
 	Rayfield.Loading.Banner.ScaleType = Enum.ScaleType.Fit
 	Rayfield.Loading.Banner.BackgroundTransparency = 1
 
