@@ -1340,6 +1340,45 @@ local function resolveIcon(icon)
 	end
 end
 
+local function shouldUseReverbWindowIcon(icon)
+	if icon == nil then
+		return true
+	end
+
+	if typeof(icon) == "string" then
+		local normalized = string.match(string.lower(icon), "^%s*(.-)%s*$")
+		return normalized == "reverb" or normalized == "reverbicon" or normalized == "reverb-icon" or normalized == "radio"
+	end
+
+	return false
+end
+
+local function applyWindowIcon(icon)
+	if not Topbar:FindFirstChild('Icon') then
+		return
+	end
+
+	if icon == 0 then
+		Topbar.Icon.Visible = false
+		return
+	end
+
+	Topbar.Icon.Visible = true
+	Topbar.Title.Position = UDim2.new(0, 47, 0.5, 0)
+
+	if shouldUseReverbWindowIcon(icon) then
+		Topbar.Icon.Image = customAssets["ReverbIcon"]
+		Topbar.Icon.ImageRectOffset = Vector2.new(0, 0)
+		Topbar.Icon.ImageRectSize = Vector2.new(0, 0)
+		return
+	end
+
+	local img, rectOffset, rectSize = resolveIcon(icon)
+	Topbar.Icon.Image = img
+	Topbar.Icon.ImageRectOffset = rectOffset or Vector2.new(0, 0)
+	Topbar.Icon.ImageRectSize = rectSize or Vector2.new(0, 0)
+end
+
 if Topbar:FindFirstChild('Settings') then
 	local success, img, rectOffset, rectSize = pcall(resolveIcon, "cog")
 	if success and img ~= "" then
@@ -2151,19 +2190,7 @@ function RayfieldLibrary:CreateWindow(Settings)
 	LoadingFrame.Subtitle.Text = Settings.LoadingSubtitle or "Interface Suite"
 	LoadingFrame.Version.Text = "Reverb Hub"
 
-	if Settings.Icon and Settings.Icon ~= 0 and Topbar:FindFirstChild('Icon') then
-		Topbar.Icon.Visible = true
-		Topbar.Title.Position = UDim2.new(0, 47, 0.5, 0)
-
-		if Settings.Icon then
-			local img, rectOffset, rectSize = resolveIcon(Settings.Icon)
-			Topbar.Icon.Image = img
-			if rectOffset then Topbar.Icon.ImageRectOffset = rectOffset end
-			if rectSize then Topbar.Icon.ImageRectSize = rectSize end
-		else
-			Topbar.Icon.Image = ""
-		end
-	end
+	applyWindowIcon(Settings.Icon)
 
 	if dragBar then
 		dragBar.Visible = false
