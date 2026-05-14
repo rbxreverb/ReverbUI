@@ -1200,7 +1200,7 @@ local function getMotionScale()
 end
 
 local function getTweenInfo(duration, easingStyle, easingDirection)
-	return TweenInfo.new(duration * getMotionScale(), easingStyle or Enum.EasingStyle.Exponential, easingDirection)
+	return TweenInfo.new(duration * getMotionScale(), easingStyle or Enum.EasingStyle.Exponential, easingDirection or Enum.EasingDirection.Out)
 end
 
 local function applySurfaceStyle()
