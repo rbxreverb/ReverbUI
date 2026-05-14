@@ -924,6 +924,7 @@ local AccountLinks = {
 }
 local updateStatsOverlayTheme = function() end
 local setStatsOverlayVisible = function() end
+local updateTopbarPageButtons = function() end
 
 local function getThemeNames()
 	local names = {}
@@ -1150,6 +1151,7 @@ local function ChangeTheme(Theme)
 		Rayfield.Main.Topbar.Settings.ImageColor3 = SelectedTheme.TextColor
 		Rayfield.Main.Topbar.Divider.BackgroundColor3 = SelectedTheme.ElementStroke
 	end
+	updateTopbarPageButtons()
 
 	Main.Search.BackgroundColor3 = SelectedTheme.TextColor
 	Main.Search.Shadow.ImageColor3 = SelectedTheme.TextColor
@@ -1675,6 +1677,7 @@ end
 
 local function openSearch()
 	searchOpen = true
+	updateTopbarPageButtons()
 
 	Main.Search.BackgroundTransparency = 1
 	Main.Search.Shadow.ImageTransparency = 1
@@ -1709,6 +1712,7 @@ end
 
 local function closeSearch()
 	searchOpen = false
+	updateTopbarPageButtons()
 
 	TweenService:Create(Main.Search, TweenInfo.new(0.35, Enum.EasingStyle.Quint), {BackgroundTransparency = 1, Size = UDim2.new(1, -55, 0, 30)}):Play()
 	TweenService:Create(Main.Search.Search, TweenInfo.new(0.15, Enum.EasingStyle.Quint), {ImageTransparency = 1}):Play()
@@ -1926,6 +1930,7 @@ local function Unhide()
 	TweenService:Create(dragBarCosmetic, TweenInfo.new(0.25, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {BackgroundTransparency = 0.5}):Play()
 
 	task.wait(0.5)
+	updateTopbarPageButtons()
 	Minimised = false
 	Debounce = false
 end
@@ -2440,6 +2445,7 @@ function RayfieldLibrary:CreateWindow(Settings)
 			if Elements.UIPageLayout.CurrentPage ~= TabPage then
 				Elements.UIPageLayout:JumpTo(TabPage)
 			end
+			updateTopbarPageButtons()
 		end)
 
 		local Tab = {}
@@ -3968,42 +3974,151 @@ Topbar.ChangeSize.MouseButton1Click:Connect(function()
 	end
 end)
 
-Main.Search.Input:GetPropertyChangedSignal('Text'):Connect(function()
-	if #Main.Search.Input.Text > 0 then
-		if not Elements.UIPageLayout.CurrentPage:FindFirstChild('SearchTitle-fsefsefesfsefesfesfThanks') then 
-			local searchTitle = Elements.Template.SectionTitle:Clone()
-			searchTitle.Parent = Elements.UIPageLayout.CurrentPage
-			searchTitle.Name = 'SearchTitle-fsefsefesfsefesfesfThanks'
-			searchTitle.LayoutOrder = -100
-			searchTitle.Title.Text = "Results from '"..Elements.UIPageLayout.CurrentPage.Name.."'"
-			searchTitle.Visible = true
-		end
-	else
-		local searchTitle = Elements.UIPageLayout.CurrentPage:FindFirstChild('SearchTitle-fsefsefesfsefesfesfThanks')
+local SearchTitleName = 'SearchTitle-fsefsefesfsefesfesfThanks'
 
+local function isSearchablePage(page)
+	return page and page.ClassName == "ScrollingFrame" and page.Name ~= "Template" and page.Name ~= "Placeholder"
+end
+
+local function matchesSearchText(value, query)
+	return string.find(string.lower(tostring(value or "")), query, 1, true) ~= nil
+end
+
+local function getSearchablePages()
+	local pages = {}
+	for _, page in ipairs(Elements:GetChildren()) do
+		if isSearchablePage(page) then
+			table.insert(pages, page)
+		end
+	end
+
+	table.sort(pages, function(a, b)
+		return a.LayoutOrder < b.LayoutOrder
+	end)
+
+	return pages
+end
+
+local function elementMatchesSearch(element, query)
+	if not element or element.Name == "Placeholder" or element.Name == SearchTitleName or element.Name == "SectionTitle" then
+		return false
+	end
+
+	if matchesSearchText(element.Name, query) then
+		return true
+	end
+
+	local title = element:FindFirstChild("Title")
+	if title and title:IsA("TextLabel") and matchesSearchText(title.Text, query) then
+		return true
+	end
+
+	local content = element:FindFirstChild("Content")
+	if content and content:IsA("TextLabel") and matchesSearchText(content.Text, query) then
+		return true
+	end
+
+	return false
+end
+
+local function setSearchTitle(page, text)
+	local searchTitle = page:FindFirstChild(SearchTitleName)
+
+	if not text then
 		if searchTitle then
 			searchTitle:Destroy()
 		end
+		return
 	end
 
-	for _, element in ipairs(Elements.UIPageLayout.CurrentPage:GetChildren()) do
-		if element.ClassName ~= 'UIListLayout' and element.Name ~= 'Placeholder' and element.Name ~= 'SearchTitle-fsefsefesfsefesfesfThanks' then
-			if element.Name == 'SectionTitle' then
-				if #Main.Search.Input.Text == 0 then
-					element.Visible = true
-				else
-					element.Visible = false
-				end
-			else
-				if string.lower(element.Name):find(string.lower(Main.Search.Input.Text), 1, true) then
-					element.Visible = true
-				else
-					element.Visible = false
-				end
+	if not searchTitle then
+		searchTitle = Elements.Template.SectionTitle:Clone()
+		searchTitle.Parent = page
+		searchTitle.Name = SearchTitleName
+		searchTitle.LayoutOrder = -100
+		searchTitle.Visible = true
+	end
+
+	searchTitle.Title.Text = text
+end
+
+local function resetSearchPage(page)
+	setSearchTitle(page, nil)
+
+	for _, element in ipairs(page:GetChildren()) do
+		if element.ClassName ~= 'UIListLayout' and element.Name ~= 'Placeholder' and element.Name ~= SearchTitleName then
+			element.Visible = true
+		end
+	end
+end
+
+local function findSearchPage(query)
+	local elementMatch = nil
+
+	for _, page in ipairs(getSearchablePages()) do
+		if matchesSearchText(page.Name, query) then
+			return page, true
+		end
+
+		for _, element in ipairs(page:GetChildren()) do
+			if elementMatchesSearch(element, query) and not elementMatch then
+				elementMatch = page
 			end
 		end
 	end
-end)
+
+	return elementMatch, false
+end
+
+local function applySearchToPage(page, query, pageMatched, hasResults)
+	if hasResults then
+		setSearchTitle(page, "Results from '"..page.Name.."'")
+	else
+		setSearchTitle(page, "No results")
+	end
+
+	for _, element in ipairs(page:GetChildren()) do
+		if element.ClassName ~= 'UIListLayout' and element.Name ~= 'Placeholder' and element.Name ~= SearchTitleName then
+			if element.Name == 'SectionTitle' then
+				element.Visible = false
+			else
+				element.Visible = hasResults and (pageMatched or elementMatchesSearch(element, query)) or false
+			end
+		end
+	end
+end
+
+local function updateGlobalSearch()
+	local queryText = Main.Search.Input.Text or ""
+	local query = string.lower(string.match(queryText, "^%s*(.-)%s*$"))
+
+	if #query == 0 then
+		for _, page in ipairs(getSearchablePages()) do
+			resetSearchPage(page)
+		end
+		return
+	end
+
+	local searchPage, pageMatched = findSearchPage(query)
+	for _, page in ipairs(getSearchablePages()) do
+		resetSearchPage(page)
+	end
+
+	if searchPage then
+		if Elements.UIPageLayout.CurrentPage ~= searchPage then
+			Elements.UIPageLayout:JumpTo(searchPage)
+		end
+		updateTopbarPageButtons()
+		applySearchToPage(searchPage, query, pageMatched, true)
+	else
+		local currentPage = Elements.UIPageLayout.CurrentPage
+		if isSearchablePage(currentPage) then
+			applySearchToPage(currentPage, query, false, false)
+		end
+	end
+end
+
+Main.Search.Input:GetPropertyChangedSignal('Text'):Connect(updateGlobalSearch)
 
 Main.Search.Input.FocusLost:Connect(function(enterPressed)
 	if #Main.Search.Input.Text == 0 and searchOpen then
@@ -4011,6 +4126,39 @@ Main.Search.Input.FocusLost:Connect(function(enterPressed)
 		closeSearch()
 	end
 end)
+
+local TopbarPageTargets = {
+	Account = "Reverb Account",
+	Settings = "ReverbLib Settings",
+}
+
+local function isTopbarPageButtonActive(button)
+	if button.Name == "Search" then
+		return searchOpen
+	end
+
+	local targetPage = TopbarPageTargets[button.Name]
+	return targetPage and Elements.UIPageLayout.CurrentPage and Elements.UIPageLayout.CurrentPage.Name == targetPage
+end
+
+local function applyTopbarButtonState(button, hovered)
+	local highlighted = hovered or isTopbarPageButtonActive(button)
+	local iconColor = highlighted and Color3.fromRGB(255, 255, 255) or SelectedTheme.TextColor
+	local iconTransparency = highlighted and 0 or 0.8
+
+	TweenService:Create(button, TweenInfo.new(0.25, Enum.EasingStyle.Exponential), {
+		ImageColor3 = iconColor,
+		ImageTransparency = iconTransparency,
+	}):Play()
+end
+
+updateTopbarPageButtons = function()
+	for _, topbarButton in ipairs(Topbar:GetChildren()) do
+		if topbarButton.ClassName == "ImageButton" and (topbarButton.Name == "Search" or TopbarPageTargets[topbarButton.Name]) then
+			applyTopbarButtonState(topbarButton, false)
+		end
+	end
+end
 
 Topbar.Search.MouseButton1Click:Connect(function()
 	task.spawn(function()
@@ -4041,6 +4189,7 @@ local function openInternalTab(tabName)
 		end
 
 		Elements.UIPageLayout:JumpTo(Elements[tabName])
+		updateTopbarPageButtons()
 	end)
 end
 
@@ -4087,11 +4236,11 @@ end
 for _, TopbarButton in ipairs(Topbar:GetChildren()) do
 	if TopbarButton.ClassName == "ImageButton" and TopbarButton.Name ~= 'Icon' then
 		TopbarButton.MouseEnter:Connect(function()
-			TweenService:Create(TopbarButton, TweenInfo.new(0.7, Enum.EasingStyle.Exponential), {ImageTransparency = 0}):Play()
+			applyTopbarButtonState(TopbarButton, true)
 		end)
 
 		TopbarButton.MouseLeave:Connect(function()
-			TweenService:Create(TopbarButton, TweenInfo.new(0.7, Enum.EasingStyle.Exponential), {ImageTransparency = 0.8}):Play()
+			applyTopbarButtonState(TopbarButton, false)
 		end)
 	end
 end
