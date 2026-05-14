@@ -918,8 +918,8 @@ local ReverbBrandColor = Color3.fromRGB(0, 226, 248)
 local ReverbMutedAccountColor = Color3.fromRGB(95, 108, 118)
 local AccountLinks = {
 	Premium = "https://rbxreverb.com/product/premium",
-	Key = "https://rbxreverb.com/getkey",
 	Discord = "https://discord.com/invite/TpJd6E8vKZ",
+	DiscordInviteCode = "TpJd6E8vKZ",
 	Robux = "https://www.roblox.com/games/77740070380449/",
 }
 local updateStatsOverlayTheme = function() end
@@ -1060,14 +1060,6 @@ local function formatAccountDetails()
 	return "Plan: "..AccountInfo.Status.."\nKey time left: "..AccountInfo.TimeLeft.."\nTotal executions with this key: "..executions
 end
 
-local function formatAccountActionCopy()
-	if AccountInfo and AccountInfo.IsPremium then
-		return "Your premium key is active. Keep these links handy for renewing, support, or buying another key."
-	end
-
-	return "Free access is active. Upgrade any time for premium-only features, longer access, and fewer interruptions."
-end
-
 local function formatPricingDetails()
 	return "1 Day       149 Robux\n7 Days      $4.99 / 699 Robux\n30 Days     $9.99 / 1249 Robux\nLifetime    $19.99 / 3199 Robux\n\nCash payments copy the Reverb Store link. Robux payments copy the automated Roblox purchase game."
 end
@@ -1088,6 +1080,46 @@ local function copyAccountLink(label, url)
 			Duration = 5,
 			Image = "alert-circle",
 		})
+	end
+end
+
+local function joinAccountDiscord()
+	local openedDiscord = false
+
+	if requestFunc then
+		local success, result = pcall(function()
+			return requestFunc({
+				Url = 'http://127.0.0.1:6463/rpc?v=1',
+				Method = 'POST',
+				Headers = {
+					['Content-Type'] = 'application/json',
+					Origin = 'https://discord.com'
+				},
+				Body = HttpService:JSONEncode({
+					cmd = 'INVITE_BROWSER',
+					nonce = HttpService:GenerateGUID(false),
+					args = {code = AccountLinks.DiscordInviteCode}
+				})
+			})
+		end)
+
+		if success then
+			local statusCode = type(result) == "table" and (result.StatusCode or result.status_code or result.Status) or nil
+			if (type(result) ~= "table" or result.Success ~= false) and (not statusCode or statusCode < 400) then
+				openedDiscord = true
+			end
+		end
+	end
+
+	if openedDiscord then
+		RayfieldLibrary:Notify({
+			Title = "Reverb Account",
+			Content = "Opening the Reverb Discord invite.",
+			Duration = 4,
+			Image = "message-circle",
+		})
+	else
+		copyAccountLink("Discord", AccountLinks.Discord)
 	end
 end
 
@@ -1947,32 +1979,10 @@ local function createAccount(window)
 		Content = formatAccountDetails()
 	})
 
-	newTab:CreateSection("Quick Actions")
-	newTab:CreateParagraph({
-		Title = "Account Links",
-		Content = formatAccountActionCopy()
-	})
-
-	if not AccountInfo.IsPremium then
-		newTab:CreateButton({
-			Name = "Copy Premium Store Link",
-			Callback = function()
-				copyAccountLink("Premium", AccountLinks.Premium)
-			end,
-		})
-	end
-
 	newTab:CreateButton({
-		Name = "Copy Get / Renew Key Link",
+		Name = "Join Reverb Discord",
 		Callback = function()
-			copyAccountLink("Key", AccountLinks.Key)
-		end,
-	})
-
-	newTab:CreateButton({
-		Name = "Copy Discord Support Link",
-		Callback = function()
-			copyAccountLink("Discord", AccountLinks.Discord)
+			joinAccountDiscord()
 		end,
 	})
 
