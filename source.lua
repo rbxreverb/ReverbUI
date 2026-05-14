@@ -1062,13 +1062,25 @@ end
 
 local function formatAccountDetails()
 	if not AccountInfo then
-		return "Expires in: Unknown\nDiscord: Not linked\nTotal executions with this key: Unknown"
+		return "Plan: Free\nKey time left: Unknown\nDiscord: Not linked\nTotal executions with this key: Unknown"
 	end
 
 	local executions = AccountInfo.TotalExecutions ~= nil and tostring(AccountInfo.TotalExecutions) or "Unknown"
 	local discord = AccountInfo.DiscordLinked and "Linked" or "Not linked"
 
-	return "Expires in: "..AccountInfo.TimeLeft.."\nDiscord: "..discord.."\nTotal executions with this key: "..executions
+	return "Plan: "..AccountInfo.Status.."\nKey time left: "..AccountInfo.TimeLeft.."\nDiscord: "..discord.."\nTotal executions with this key: "..executions
+end
+
+local function formatAccountActionCopy()
+	if AccountInfo and AccountInfo.IsPremium then
+		return "Your premium key is active. Keep these links handy for renewing, support, or buying another key."
+	end
+
+	return "Free access is active. Upgrade any time for premium-only features, longer access, and fewer interruptions."
+end
+
+local function formatPricingDetails()
+	return "1 Day       149 Robux\n7 Days      $4.99 / 699 Robux\n30 Days     $9.99 / 1249 Robux\nLifetime    $19.99 / 3199 Robux\n\nCash payments copy the Reverb Store link. Robux payments copy the automated Roblox purchase game."
 end
 
 local function copyAccountLink(label, url)
@@ -1939,17 +1951,22 @@ local function createAccount(window)
 		Elements['Reverb Account'].LayoutOrder = 999
 	end
 
-	newTab:CreateSection("Account")
+	newTab:CreateSection("Access Overview")
 	newTab:CreateLabel(AccountInfo.BadgeText, "badge-check", AccountInfo.BadgeColor, true)
 	AccountParagraph = newTab:CreateParagraph({
-		Title = "License",
+		Title = "Your Key",
 		Content = formatAccountDetails()
 	})
 
-	newTab:CreateSection("Links")
+	newTab:CreateSection("Quick Actions")
+	newTab:CreateParagraph({
+		Title = "Account Links",
+		Content = formatAccountActionCopy()
+	})
+
 	if not AccountInfo.IsPremium then
 		newTab:CreateButton({
-			Name = "Get Premium",
+			Name = "Copy Premium Store Link",
 			Callback = function()
 				copyAccountLink("Premium", AccountLinks.Premium)
 			end,
@@ -1957,35 +1974,35 @@ local function createAccount(window)
 	end
 
 	newTab:CreateButton({
-		Name = "Get / Renew Key",
+		Name = "Copy Get / Renew Key Link",
 		Callback = function()
 			copyAccountLink("Key", AccountLinks.Key)
 		end,
 	})
 
 	newTab:CreateButton({
-		Name = "Copy Discord",
+		Name = "Copy Discord Support Link",
 		Callback = function()
 			copyAccountLink("Discord", AccountLinks.Discord)
 		end,
 	})
 
-	newTab:CreateSection("Keys")
-	newTab:CreateLabel("Reverb Premium Keys", "badge-dollar-sign", ReverbBrandColor, true)
+	newTab:CreateSection("Upgrade Options")
+	newTab:CreateLabel("Reverb Premium Key Pricing", "badge-dollar-sign", ReverbBrandColor, true)
 	newTab:CreateParagraph({
-		Title = "Key Pricing Menu",
-		Content = "1 Day: 149 Robux\n7 Days: $4.99 / 699 Robux\n30 Days: $9.99 / 1249 Robux\nLifetime: $19.99 / 3199 Robux\n\nSelect your preferred payment method below."
+		Title = "Available Plans",
+		Content = formatPricingDetails()
 	})
 
 	newTab:CreateButton({
-		Name = "Pay with Cash",
+		Name = "Copy Cash Payment Link",
 		Callback = function()
 			copyAccountLink("Store", AccountLinks.Premium)
 		end,
 	})
 
 	newTab:CreateButton({
-		Name = "Pay with Robux",
+		Name = "Copy Robux Payment Link",
 		Callback = function()
 			copyAccountLink("Robux Purchase Game", AccountLinks.Robux)
 		end,
