@@ -1665,13 +1665,7 @@ end
 
 function RayfieldLibrary:CreateWindow(Settings)
 	if Rayfield:FindFirstChild('Loading') then
-		if getgenv and not getgenv().reverbLibCached then
-			Rayfield.Enabled = true
-			Rayfield.Loading.Visible = true
-
-			task.wait(1.4)
-			Rayfield.Loading.Visible = false
-		end
+		Rayfield.Loading.Visible = false
 	end
 
 	if getgenv then getgenv().reverbLibCached = true end
