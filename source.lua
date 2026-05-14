@@ -1200,7 +1200,26 @@ local function getMotionScale()
 end
 
 local function getTweenInfo(duration, easingStyle, easingDirection)
-	return TweenInfo.new(duration * getMotionScale(), easingStyle or Enum.EasingStyle.Exponential, easingDirection or Enum.EasingDirection.Out)
+	local scaledDuration = (tonumber(duration) or 0) * getMotionScale()
+	local style = easingStyle
+	if typeof(style) ~= "EnumItem" or style.EnumType ~= Enum.EasingStyle then
+		style = Enum.EasingStyle.Exponential
+	end
+
+	local direction = easingDirection
+	if typeof(direction) ~= "EnumItem" or direction.EnumType ~= Enum.EasingDirection then
+		direction = Enum.EasingDirection.Out
+	end
+
+	local success, tweenInfo = pcall(function()
+		return TweenInfo.new(scaledDuration, style, direction)
+	end)
+
+	if success then
+		return tweenInfo
+	end
+
+	return TweenInfo.new(scaledDuration)
 end
 
 local function applySurfaceStyle()
