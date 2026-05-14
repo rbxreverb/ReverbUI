@@ -129,22 +129,11 @@ local ConfigurationExtension = ".rvbl"
 local settingsTable = {
 	General = {
 		rayfieldOpen = {Type = 'bind', Value = 'K', Name = 'Reverb UI Keybind', Order = 10},
-		startupPage = {Type = 'dropdown', Value = 'First Tab', Name = 'Startup Page', Options = {'First Tab', 'Last Opened', 'Account Page', 'Settings Page'}, Order = 20},
-		lastOpenedPage = {Type = 'hidden', Value = '', Name = 'Last Opened Page', Order = 999},
-		startMinimized = {Type = 'toggle', Value = false, Name = 'Start Minimized', Order = 30},
-		rememberMinimized = {Type = 'toggle', Value = false, Name = 'Remember Minimized State', Order = 40},
-		lastMinimized = {Type = 'hidden', Value = false, Name = 'Last Minimized State', Order = 999},
-		mobilePromptText = {Type = 'input', Value = 'Reverb', Name = 'Mobile Prompt Text', Placeholder = 'Reverb', Order = 50},
 	},
 	Appearance = {
 		theme = {Type = 'dropdown', Value = 'Reverb', Name = 'Theme', Order = 10},
-		uiScale = {Type = 'dropdown', Value = '100%', Name = 'UI Scale', Options = {'90%', '100%', '110%', '125%'}, Order = 20},
-		compactMode = {Type = 'toggle', Value = false, Name = 'Compact Layout', Order = 30},
-		acrylicPanels = {Type = 'toggle', Value = true, Name = 'Acrylic Panels', Order = 40},
-	},
-	Motion = {
-		animationStyle = {Type = 'dropdown', Value = 'Smooth', Name = 'Animation Style', Options = {'Reduced', 'Normal', 'Smooth'}, Order = 10},
-		safeMode = {Type = 'toggle', Value = false, Name = 'Safe Mode', Order = 20},
+		uiScale = {Type = 'dropdown', Value = '100%', Name = 'UI Scale', Options = {'50%', '60%', '70%', '80%', '90%', '100%', '110%', '120%', '130%', '140%', '150%'}, Order = 20},
+		uiHeight = {Type = 'dropdown', Value = '100%', Name = 'UI Vertical Size', Options = {'50%', '60%', '70%', '80%', '90%', '100%', '110%', '120%', '130%', '140%', '150%'}, Order = 30},
 	},
 	Notifications = {
 		notificationDuration = {Type = 'dropdown', Value = 'Auto', Name = 'Notification Duration', Options = {'Short', 'Auto', 'Long', 'Persistent'}, Order = 10},
@@ -158,14 +147,13 @@ local settingsTable = {
 		statsOverlay = {Type = 'toggle', Value = false, Name = 'Show Performance Overlay', Order = 10},
 		statsShowFPS = {Type = 'toggle', Value = true, Name = 'Show FPS', Order = 20},
 		statsShowPing = {Type = 'toggle', Value = true, Name = 'Show Ping', Order = 30},
-		statsCompact = {Type = 'toggle', Value = false, Name = 'Compact Overlay', Order = 40},
-		statsPosition = {Type = 'dropdown', Value = 'Top Right', Name = 'Overlay Position', Options = {'Top Right', 'Top Left', 'Bottom Right', 'Bottom Left'}, Order = 50},
+		statsPosition = {Type = 'dropdown', Value = 'Top Right', Name = 'Overlay Position', Options = {'Top Right', 'Top Left', 'Bottom Right', 'Bottom Left'}, Order = 40},
 	},
 	Config = {
-		autoLoadScriptConfig = {Type = 'toggle', Value = false, Name = 'Auto-Load Script Config', Order = 10},
+		autoLoadSavedConfig = {Type = 'toggle', Value = false, Name = 'Auto-Load Saved Config', Order = 10},
 	}
 }
-local settingsCategoryOrder = {"General", "Appearance", "Motion", "Notifications", "Search", "Performance", "Config"}
+local settingsCategoryOrder = {"General", "Appearance", "Notifications", "Search", "Performance", "Config"}
 
 -- Settings that have been overridden by the developer. These will not be saved to the user's configuration file
 -- Overridden settings always take precedence over settings in the configuration file, and are cleared if the user changes the setting in the UI
@@ -177,7 +165,7 @@ end
 local function getSetting(category: string, name: string): any
 	if overriddenSettings[category .. "." .. name] ~= nil then
 		return overriddenSettings[category .. "." .. name]
-	elseif settingsTable[category][name] ~= nil then
+	elseif settingsTable[category] and settingsTable[category][name] ~= nil then
 		return settingsTable[category][name].Value
 	end
 end
@@ -916,9 +904,6 @@ local dragBar = Rayfield:FindFirstChild('Drag')
 local dragInteract = dragBar and dragBar.Interact or nil
 local dragBarCosmetic = dragBar and dragBar.Drag or nil
 
-local dragOffset = 255
-local dragOffsetMobile = 150
-
 Rayfield.DisplayOrder = 100
 LoadingFrame.Version.Text = "Reverb Hub"
 
@@ -941,7 +926,6 @@ local StatsOverlay = nil
 local StatsOverlayText = nil
 local StatsParagraph = nil
 local MainUIScale = nil
-local pendingStartupPageApplied = false
 local AccountInfo = nil
 local AccountParagraph = nil
 local ReverbBrandColor = Color3.fromRGB(0, 226, 248)
@@ -957,7 +941,6 @@ local updateStatsOverlayTheme = function() end
 local setStatsOverlayVisible = function() end
 local updateTopbarPageButtons = function() end
 local applySettingsExperience = function() end
-local rememberMinimizedState = function() end
 
 local function getThemeNames()
 	local names = {}
@@ -1159,10 +1142,8 @@ end
 
 local function getUIScaleValue()
 	local selected = tostring(getSetting("Appearance", "uiScale") or "100%")
-	if selected == "90%" then return 0.9 end
-	if selected == "110%" then return 1.1 end
-	if selected == "125%" then return 1.25 end
-	return 1
+	local percent = tonumber(string.match(selected, "(%d+)")) or 100
+	return math.clamp(percent, 50, 150) / 100
 end
 
 local function ensureMainUIScale()
@@ -1184,23 +1165,8 @@ local function applyUIScale()
 	ensureMainUIScale().Scale = getUIScaleValue()
 end
 
-local function getMotionScale()
-	if getSetting("Motion", "safeMode") then
-		return 0.65
-	end
-
-	local style = getSetting("Motion", "animationStyle")
-	if style == "Reduced" then
-		return 0.55
-	elseif style == "Normal" then
-		return 0.85
-	end
-
-	return 1
-end
-
 local function getTweenInfo(duration, easingStyle, easingDirection)
-	local scaledDuration = (tonumber(duration) or 0) * getMotionScale()
+	local scaledDuration = tonumber(duration) or 0
 	local style = easingStyle
 	if typeof(style) ~= "EnumItem" or style.EnumType ~= Enum.EasingStyle then
 		style = Enum.EasingStyle.Exponential
@@ -1222,35 +1188,43 @@ local function getTweenInfo(duration, easingStyle, easingDirection)
 	return TweenInfo.new(scaledDuration)
 end
 
-local function applySurfaceStyle()
-	if Hidden then
-		return
-	end
+local function getUIHeightValue()
+	local selected = tostring(getSetting("Appearance", "uiHeight") or "100%")
+	local percent = tonumber(string.match(selected, "(%d+)")) or 100
+	return math.clamp(percent, 50, 150) / 100
+end
 
-	local acrylic = getSetting("Appearance", "acrylicPanels")
-	local transparency = acrylic and 0.08 or 0
+local function getExpandedMainHeight()
+	local baseHeight = useMobileSizing and 275 or 475
+	return math.floor(baseHeight * getUIHeightValue() + 0.5)
+end
 
-	if Main.Visible then
-		Main.BackgroundTransparency = transparency
-	end
+local function getExpandedMainSize()
+	return UDim2.new(0, 500, 0, getExpandedMainHeight())
+end
 
-	if Topbar.Visible and not Minimised then
-		Topbar.BackgroundTransparency = transparency
-		Topbar.CornerRepair.BackgroundTransparency = transparency
+local function getDragOffset()
+	return math.floor(getExpandedMainHeight() / 2 + (useMobileSizing and 13 or 18))
+end
+
+local function getDragOffsetMobile()
+	return math.floor(getExpandedMainHeight() / 2 + 13)
+end
+
+local function positionDragBar()
+	if dragBar then
+		dragBar.Position = UDim2.new(0.5, 0, 0.5, useMobileSizing and getDragOffsetMobile() or getDragOffset())
 	end
 end
 
-local function applyCompactLayout()
-	local compact = getSetting("Appearance", "compactMode")
-	local padding = compact and 5 or 8
+local function applyWindowSize()
+	if not Main.Visible or Hidden then
+		return
+	end
 
-	for _, page in ipairs(Elements:GetChildren()) do
-		if page:IsA("ScrollingFrame") then
-			local layout = page:FindFirstChildWhichIsA("UIListLayout")
-			if layout then
-				layout.Padding = UDim.new(0, padding)
-			end
-		end
+	if not Minimised then
+		Main.Size = getExpandedMainSize()
+		positionDragBar()
 	end
 end
 
@@ -1293,18 +1267,10 @@ local function getNotificationDuration(explicitDuration, calculatedDuration)
 	return explicitDuration or calculatedDuration
 end
 
-local function applyMobilePromptText()
-	if MPrompt then
-		MPrompt.Title.Text = 'Show '..tostring(getSetting("General", "mobilePromptText") or "Reverb")
-	end
-end
-
 applySettingsExperience = function()
 	applyUIScale()
-	applyCompactLayout()
-	applySurfaceStyle()
+	applyWindowSize()
 	applyNotificationPosition()
-	applyMobilePromptText()
 	updateStatsOverlayTheme()
 	setStatsOverlayVisible(getSetting("Performance", "statsOverlay"))
 	updateStatsText()
@@ -1432,10 +1398,9 @@ local function applyStatsOverlayLayout()
 		return
 	end
 
-	local compact = getSetting("Performance", "statsCompact")
 	local position = getSetting("Performance", "statsPosition") or "Top Right"
-	local width = compact and 124 or 170
-	local height = compact and 28 or 34
+	local width = 170
+	local height = 34
 
 	StatsOverlay.Size = UDim2.new(0, width, 0, height)
 	StatsOverlay.AnchorPoint = Vector2.new(string.find(position, "Left", 1, true) and 0 or 1, string.find(position, "Bottom", 1, true) and 1 or 0)
@@ -1447,9 +1412,9 @@ local function applyStatsOverlayLayout()
 	)
 
 	if StatsOverlayText then
-		StatsOverlayText.TextSize = compact and 12 or 13
-		StatsOverlayText.Size = UDim2.new(1, compact and -14 or -20, 1, 0)
-		StatsOverlayText.Position = UDim2.new(0, compact and 7 or 10, 0, 0)
+		StatsOverlayText.TextSize = 13
+		StatsOverlayText.Size = UDim2.new(1, -20, 1, 0)
+		StatsOverlayText.Position = UDim2.new(0, 10, 0, 0)
 	end
 end
 
@@ -1459,7 +1424,7 @@ updateStatsOverlayTheme = function()
 	end
 
 	StatsOverlay.BackgroundColor3 = SelectedTheme.Background
-	StatsOverlay.BackgroundTransparency = getSetting("Appearance", "acrylicPanels") and 0.08 or 0
+	StatsOverlay.BackgroundTransparency = 0.08
 	StatsOverlay.UIStroke.Color = SelectedTheme.ElementStroke
 	if StatsOverlayText then
 		StatsOverlayText.TextColor3 = SelectedTheme.TextColor
@@ -1469,7 +1434,7 @@ end
 
 setStatsOverlayVisible = function(visible)
 	ensureStatsOverlay()
-	local canShow = visible and not getSetting("Motion", "safeMode") and (getSetting("Performance", "statsShowFPS") ~= false or getSetting("Performance", "statsShowPing") ~= false)
+	local canShow = visible and (getSetting("Performance", "statsShowFPS") ~= false or getSetting("Performance", "statsShowPing") ~= false)
 	StatsOverlay.Visible = canShow and true or false
 	applyStatsOverlayLayout()
 	updateStatsText()
@@ -2080,7 +2045,6 @@ end
 
 local function Maximise()
 	Debounce = true
-	rememberMinimizedState(false)
 	Topbar.ChangeSize.Image = customAssets[tostring(10137941941)]
 
 	TweenService:Create(Topbar.UIStroke, TweenInfo.new(0.5, Enum.EasingStyle.Exponential), {Transparency = 1}):Play()
@@ -2088,7 +2052,7 @@ local function Maximise()
 	TweenService:Create(Topbar.CornerRepair, TweenInfo.new(0.5, Enum.EasingStyle.Exponential), {BackgroundTransparency = 0}):Play()
 	TweenService:Create(Topbar.Divider, TweenInfo.new(0.5, Enum.EasingStyle.Exponential), {BackgroundTransparency = 0}):Play()
 	TweenService:Create(dragBarCosmetic, TweenInfo.new(0.25, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {BackgroundTransparency = 0.7}):Play()
-	TweenService:Create(Main, TweenInfo.new(0.5, Enum.EasingStyle.Exponential), {Size = useMobileSizing and UDim2.new(0, 500, 0, 275) or UDim2.new(0, 500, 0, 475)}):Play()
+	TweenService:Create(Main, TweenInfo.new(0.5, Enum.EasingStyle.Exponential), {Size = getExpandedMainSize()}):Play()
 	TweenService:Create(Topbar, TweenInfo.new(0.5, Enum.EasingStyle.Exponential), {Size = UDim2.new(0, 500, 0, 45)}):Play()
 	TabList.Visible = true
 	task.wait(0.2)
@@ -2108,10 +2072,9 @@ end
 
 local function Unhide()
 	Debounce = true
-	rememberMinimizedState(false)
 	Main.Position = UDim2.new(0.5, 0, 0.5, 0)
 	Main.Visible = true
-	TweenService:Create(Main, TweenInfo.new(0.5, Enum.EasingStyle.Exponential), {Size = useMobileSizing and UDim2.new(0, 500, 0, 275) or UDim2.new(0, 500, 0, 475)}):Play()
+	TweenService:Create(Main, TweenInfo.new(0.5, Enum.EasingStyle.Exponential), {Size = getExpandedMainSize()}):Play()
 	TweenService:Create(Main.Topbar, TweenInfo.new(0.5, Enum.EasingStyle.Exponential), {Size = UDim2.new(0, 500, 0, 45)}):Play()
 	TweenService:Create(Main.Shadow.Image, TweenInfo.new(0.7, Enum.EasingStyle.Exponential), {ImageTransparency = 0.6}):Play()
 	TweenService:Create(Main, TweenInfo.new(0.5, Enum.EasingStyle.Exponential), {BackgroundTransparency = 0}):Play()
@@ -2134,7 +2097,7 @@ local function Unhide()
 		task.spawn(Maximise)
 	end
 
-	dragBar.Position = useMobileSizing and UDim2.new(0.5, 0, 0.5, dragOffsetMobile) or UDim2.new(0.5, 0, 0.5, dragOffset)
+	positionDragBar()
 
 	dragInteract.Visible = true
 
@@ -2163,7 +2126,6 @@ end
 
 local function Minimise()
 	Debounce = true
-	rememberMinimizedState(true)
 	Topbar.ChangeSize.Image = customAssets[tostring(11036884234)]
 
 	Topbar.UIStroke.Color = SelectedTheme.ElementStroke
@@ -2207,25 +2169,6 @@ local function saveSettings() -- Save settings to config file
 	end
 end
 
-local function setSettingSilently(category, setting, value)
-	if settingsTable[category] and settingsTable[category][setting] then
-		settingsTable[category][setting].Value = value
-		saveSettings()
-	end
-end
-
-local function rememberOpenedPage(pageName)
-	if pageName and getSetting("General", "startupPage") == "Last Opened" then
-		setSettingSilently("General", "lastOpenedPage", pageName)
-	end
-end
-
-rememberMinimizedState = function(value)
-	if getSetting("General", "rememberMinimized") then
-		setSettingSilently("General", "lastMinimized", value and true or false)
-	end
-end
-
 local function updateSetting(category: string, setting: string, value: any)
 	if not settingsInitialized then
 		return
@@ -2238,7 +2181,7 @@ local function updateSetting(category: string, setting: string, value: any)
 		settingsTable[category][setting].Value = value
 		pcall(ChangeTheme, value)
 		applySettingsExperience()
-	elseif category == "Appearance" or category == "Motion" or category == "Notifications" or category == "Search" or category == "General" then
+	elseif category == "Appearance" or category == "Notifications" or category == "Search" or category == "General" then
 		applySettingsExperience()
 	elseif category == "Performance" and setting == "statsOverlay" then
 		setStatsOverlayVisible(value)
@@ -2271,57 +2214,6 @@ local function getSettingsInOrder(settingCategory)
 	end)
 
 	return orderedSettings
-end
-
-local function styleTabButtonsForPage(page)
-	for _, tabButton in ipairs(TabList:GetChildren()) do
-		if tabButton.Name ~= "Template" and tabButton.ClassName == "Frame" and tabButton.Name ~= "Placeholder" then
-			local selected = page and tabButton.Name == page.Name
-			tabButton.BackgroundColor3 = selected and SelectedTheme.TabBackgroundSelected or SelectedTheme.TabBackground
-			tabButton.Title.TextColor3 = selected and SelectedTheme.SelectedTabTextColor or SelectedTheme.TabTextColor
-			tabButton.Image.ImageColor3 = selected and SelectedTheme.SelectedTabTextColor or SelectedTheme.TabTextColor
-			tabButton.BackgroundTransparency = selected and 0 or 0.7
-			tabButton.Title.TextTransparency = selected and 0 or 0.2
-			tabButton.Image.ImageTransparency = selected and 0 or 0.2
-			tabButton.UIStroke.Transparency = selected and 1 or 0.5
-		end
-	end
-end
-
-local function jumpToSettingsPage(pageName, rememberPage)
-	local page = pageName and Elements:FindFirstChild(pageName)
-	if not page then
-		return false
-	end
-
-	Elements.UIPageLayout:JumpTo(page)
-	styleTabButtonsForPage(page)
-	if rememberPage then
-		rememberOpenedPage(pageName)
-	end
-	updateTopbarPageButtons()
-	return true
-end
-
-local function applyStartupPage()
-	if pendingStartupPageApplied then
-		return
-	end
-	pendingStartupPageApplied = true
-
-	local startupPage = getSetting("General", "startupPage") or "First Tab"
-	local targetPage = nil
-	if startupPage == "Account Page" then
-		targetPage = "Reverb Account"
-	elseif startupPage == "Settings Page" then
-		targetPage = "ReverbLib Settings"
-	elseif startupPage == "Last Opened" then
-		targetPage = getSetting("General", "lastOpenedPage")
-	end
-
-	if targetPage and targetPage ~= "" then
-		jumpToSettingsPage(targetPage, false)
-	end
 end
 
 local function createAccount(window)
@@ -2469,24 +2361,24 @@ local function createSettings(window)
 			})
 		elseif categoryName == "Config" then
 			newTab:CreateParagraph({
-				Title = "Script Configs",
-				Content = "These controls manage ReverbLib UI element values for this script only. Game-specific config presets should live in each game's own config tab."
+				Title = "Saved Config Behavior",
+				Content = "Auto-load decides whether saved control values should apply again on the next execution. Game-specific config tabs can use the same setting when loading their own presets."
 			})
 
 			newTab:CreateButton({
-				Name = "Load Saved Script Config",
+				Name = "Load Saved Config Now",
 				Callback = function()
 					RayfieldLibrary:LoadConfiguration()
 				end,
 			})
 
 			newTab:CreateButton({
-				Name = "Save Current Script Config",
+				Name = "Save Current Config",
 				Callback = function()
 					SaveConfiguration()
 					RayfieldLibrary:Notify({
 						Title = "Reverb Config",
-						Content = "Current script config saved.",
+						Content = "Current config saved.",
 						Duration = 4,
 						Image = "save",
 					})
@@ -2494,7 +2386,7 @@ local function createSettings(window)
 			})
 
 			newTab:CreateButton({
-				Name = "Copy Current Script Config",
+				Name = "Copy Current Config",
 				Callback = function()
 					local data = {}
 					for flagName, flag in pairs(RayfieldLibrary.Flags) do
@@ -2511,7 +2403,7 @@ local function createSettings(window)
 						setclipboard(HttpService:JSONEncode(data))
 						RayfieldLibrary:Notify({
 							Title = "Reverb Config",
-							Content = "Current script config copied.",
+							Content = "Current config copied.",
 							Duration = 4,
 							Image = "copy",
 						})
@@ -2540,6 +2432,14 @@ local function createSettings(window)
 	applySettingsExperience()
 	updateStatsText()
 	saveSettings()
+end
+
+function RayfieldLibrary:ShouldAutoLoadConfig()
+	return getSetting("Config", "autoLoadSavedConfig") == true
+end
+
+function RayfieldLibrary:GetReverbSetting(category, setting)
+	return getSetting(category, setting)
 end
 
 function RayfieldLibrary:CreateWindow(Settings)
@@ -2655,8 +2555,8 @@ function RayfieldLibrary:CreateWindow(Settings)
 	end)
 
 
-	makeDraggable(Main, Topbar, false, {dragOffset, dragOffsetMobile})
-	if dragBar then dragBar.Position = useMobileSizing and UDim2.new(0.5, 0, 0.5, dragOffsetMobile) or UDim2.new(0.5, 0, 0.5, dragOffset) makeDraggable(Main, dragInteract, true, {dragOffset, dragOffsetMobile}) end
+	makeDraggable(Main, Topbar, false, {getDragOffset(), getDragOffsetMobile()})
+	if dragBar then positionDragBar() makeDraggable(Main, dragInteract, true, {getDragOffset(), getDragOffsetMobile()}) end
 
 	for _, TabButton in ipairs(TabList:GetChildren()) do
 		if TabButton.ClassName == "Frame" and TabButton.Name ~= "Placeholder" then
@@ -2846,7 +2746,6 @@ function RayfieldLibrary:CreateWindow(Settings)
 			if Elements.UIPageLayout.CurrentPage ~= TabPage then
 				Elements.UIPageLayout:JumpTo(TabPage)
 			end
-			rememberOpenedPage(TabPage.Name)
 			updateTopbarPageButtons()
 		end)
 
@@ -4269,7 +4168,7 @@ function RayfieldLibrary:CreateWindow(Settings)
 	TweenService:Create(LoadingFrame.Subtitle, TweenInfo.new(0.2, Enum.EasingStyle.Exponential), {TextTransparency = 1}):Play()
 	TweenService:Create(LoadingFrame.Version, TweenInfo.new(0.2, Enum.EasingStyle.Exponential), {TextTransparency = 1}):Play()
 	task.wait(0.1)
-	TweenService:Create(Main, TweenInfo.new(0.6, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out), {Size = useMobileSizing and UDim2.new(0, 500, 0, 275) or UDim2.new(0, 500, 0, 475)}):Play()
+	TweenService:Create(Main, TweenInfo.new(0.6, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out), {Size = getExpandedMainSize()}):Play()
 	TweenService:Create(Main.Shadow.Image, TweenInfo.new(0.5, Enum.EasingStyle.Exponential), {ImageTransparency = 0.6}):Play()
 
 	Topbar.BackgroundTransparency = 1
@@ -4330,15 +4229,6 @@ function RayfieldLibrary:CreateWindow(Settings)
 	end)
 
 	if not success then warn('ReverbLib had an issue creating settings.') end
-	applyStartupPage()
-	if getSetting("General", "startMinimized") or (getSetting("General", "rememberMinimized") and getSetting("General", "lastMinimized")) then
-		task.defer(function()
-			if not Minimised and not Debounce then
-				Minimised = true
-				Minimise()
-			end
-		end)
-	end
 
 	return Window
 end
@@ -4630,7 +4520,6 @@ local function openInternalTab(tabName)
 		end
 
 		Elements.UIPageLayout:JumpTo(Elements[tabName])
-		rememberOpenedPage(tabName)
 		updateTopbarPageButtons()
 	end)
 end
@@ -4932,7 +4821,7 @@ if useStudio then
 	--local Paragraph = Tab:CreateParagraph({Title = "Paragraph Example", Content = "Paragraph ExampleParagraph ExampleParagraph ExampleParagraph ExampleParagraph ExampleParagraph ExampleParagraph ExampleParagraph ExampleParagraph ExampleParagraph ExampleParagraph ExampleParagraph ExampleParagraph ExampleParagraph Example"})
 end
 
-if CEnabled and getSetting("Config", "autoLoadScriptConfig") and Main:FindFirstChild('Notice') then
+if CEnabled and RayfieldLibrary:ShouldAutoLoadConfig() and Main:FindFirstChild('Notice') then
 	Main.Notice.BackgroundTransparency = 1
 	Main.Notice.Title.TextTransparency = 1
 	Main.Notice.Size = UDim2.new(0, 0, 0, 0)
@@ -4945,7 +4834,7 @@ if CEnabled and getSetting("Config", "autoLoadScriptConfig") and Main:FindFirstC
 end
 
 task.delay(4, function()
-	if getSetting("Config", "autoLoadScriptConfig") then
+	if RayfieldLibrary:ShouldAutoLoadConfig() then
 		RayfieldLibrary.LoadConfiguration()
 	else
 		globalLoaded = true
