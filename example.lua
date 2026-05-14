@@ -25,7 +25,7 @@ local Window = ReverbLib:CreateWindow({
    },
 })
 
-local MainTab = Window:CreateTab("Main", "house")
+local MainTab = Window:CreateTab("Main", 4483362458)
 local PlayerTab = Window:CreateTab("Player", "user")
 local SettingsTab = Window:CreateTab("Settings", "settings")
 

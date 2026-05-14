@@ -1016,8 +1016,12 @@ local function resolveIcon(icon)
 	end
 
 	if typeof(icon) == "string" and Icons then
-		local asset = getIcon(icon)
-		return "rbxassetid://" .. asset.id, asset.imageRectOffset, asset.imageRectSize
+		local success, asset = pcall(getIcon, icon)
+		if success and asset then
+			return "rbxassetid://" .. asset.id, asset.imageRectOffset, asset.imageRectSize
+		end
+		warn("ReverbLib | Failed to find icon '" .. tostring(icon) .. "'. The element will render without an icon.")
+		return "", nil, nil
 	else
 		return getAssetUri(icon), nil, nil
 	end
