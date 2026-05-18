@@ -926,6 +926,9 @@ local PerformanceStats = {FPS = 0, Ping = 0}
 local StatsOverlay = nil
 local StatsOverlayText = nil
 local StatsParagraph = nil
+local FooterLabel = nil
+local FooterText = nil
+local footerReady = false
 local MainUIScale = nil
 local AccountInfo = nil
 local AccountParagraph = nil
@@ -1344,6 +1347,10 @@ local function ChangeTheme(Theme)
 		end
 	end
 
+	if FooterLabel then
+		FooterLabel.TextColor3 = ReverbBrandColor
+	end
+
 	updateStatsOverlayTheme()
 end
 
@@ -1372,6 +1379,94 @@ updateStatsText = function()
 			Content = text
 		})
 	end
+end
+
+local function resolveFooterText(footer)
+	if footer == false or footer == nil then
+		return nil
+	end
+
+	if type(footer) == "string" then
+		return footer ~= "" and footer or nil
+	end
+
+	if type(footer) ~= "table" then
+		return nil
+	end
+
+	if footer.Enabled == false then
+		return nil
+	end
+
+	local text = footer.Text or footer.Content or footer.Value
+	if type(text) == "string" and text ~= "" then
+		return text
+	end
+
+	local scriptName = footer.Name or footer.ScriptName
+	local version = footer.Version or footer.ScriptVersion
+	local author = footer.By or footer.Author
+	if scriptName and version then
+		local builtText = tostring(scriptName).." "..tostring(version)
+		if author then
+			builtText = builtText.." By "..tostring(author)
+		end
+		return builtText
+	end
+
+	return nil
+end
+
+local function ensureFooterLabel()
+	if FooterLabel then
+		return FooterLabel
+	end
+
+	FooterLabel = Instance.new("TextLabel")
+	FooterLabel.Name = "ReverbFooter"
+	FooterLabel.AnchorPoint = Vector2.new(0.5, 1)
+	FooterLabel.BackgroundTransparency = 1
+	FooterLabel.Font = Enum.Font.GothamMedium
+	FooterLabel.Position = UDim2.new(0.5, 0, 1, -10)
+	FooterLabel.Size = UDim2.new(1, -48, 0, 16)
+	FooterLabel.Text = ""
+	FooterLabel.TextColor3 = ReverbBrandColor
+	FooterLabel.TextSize = 12
+	FooterLabel.TextTransparency = 1
+	FooterLabel.TextTruncate = Enum.TextTruncate.AtEnd
+	FooterLabel.TextXAlignment = Enum.TextXAlignment.Center
+	FooterLabel.TextYAlignment = Enum.TextYAlignment.Center
+	FooterLabel.ZIndex = 50
+	FooterLabel.Parent = Main
+
+	return FooterLabel
+end
+
+local function refreshFooterVisibility(animate)
+	if not FooterLabel then
+		return
+	end
+
+	local shouldShow = footerReady and FooterText ~= nil and FooterText ~= "" and not Hidden and not Minimised
+	local targetTransparency = shouldShow and 0.15 or 1
+	FooterLabel.Visible = true
+	if animate then
+		TweenService:Create(FooterLabel, getTweenInfo(0.3, Enum.EasingStyle.Exponential), {TextTransparency = targetTransparency}):Play()
+	else
+		FooterLabel.TextTransparency = targetTransparency
+	end
+end
+
+local function setWindowFooter(footer, animate)
+	FooterText = resolveFooterText(footer)
+	if FooterText then
+		local label = ensureFooterLabel()
+		label.Text = FooterText
+		label.TextColor3 = ReverbBrandColor
+	elseif FooterLabel then
+		FooterLabel.Text = ""
+	end
+	refreshFooterVisibility(animate)
 end
 
 local function ensureStatsOverlay()
@@ -2074,6 +2169,7 @@ local function Hide(notify: boolean?)
 	if dragInteract then dragInteract.Visible = false end
 
 	setElementsVisible(false)
+	refreshFooterVisibility(true)
 
 	task.wait(0.5)
 	Main.Visible = false
@@ -2101,6 +2197,7 @@ local function Maximise()
 	task.wait(0.1)
 
 	setTabButtonsVisible(true)
+	refreshFooterVisibility(true)
 
 	task.wait(0.5)
 	Debounce = false
@@ -2152,6 +2249,7 @@ local function Unhide()
 	setTabButtonsVisible(true)
 
 	setElementsVisible(true)
+	refreshFooterVisibility(true)
 
 	TweenService:Create(dragBarCosmetic, TweenInfo.new(0.25, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {BackgroundTransparency = 0.5}):Play()
 
@@ -2172,6 +2270,7 @@ local function Minimise()
 	setTabButtonsVisible(false)
 
 	setElementsVisible(false)
+	refreshFooterVisibility(true)
 
 	TweenService:Create(dragBarCosmetic, TweenInfo.new(0.25, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {BackgroundTransparency = 1}):Play()
 	TweenService:Create(Topbar.UIStroke, TweenInfo.new(0.5, Enum.EasingStyle.Exponential), {Transparency = 0}):Play()
@@ -2501,6 +2600,7 @@ function RayfieldLibrary:CreateWindow(Settings)
 
 	if getgenv then getgenv().reverbLibCached = true end
 	AccountInfo = resolveAccountInfo(Settings)
+	footerReady = false
 
 	if not correctBuild and not Settings.DisableBuildWarnings then
 		task.delay(3, 
@@ -2549,6 +2649,19 @@ function RayfieldLibrary:CreateWindow(Settings)
 	LoadingFrame.Version.Text = "Reverb Hub"
 
 	applyWindowIcon(Settings.Icon)
+
+	local footerSetting = Settings.Footer
+	if footerSetting == nil then
+		footerSetting = Settings.FooterText or Settings.ScriptFooter
+	end
+	if footerSetting == nil and Settings.ScriptVersion then
+		footerSetting = {
+			Name = Settings.ScriptName or Settings.Name,
+			Version = Settings.ScriptVersion,
+			By = Settings.By or Settings.Author or "Reverb"
+		}
+	end
+	setWindowFooter(footerSetting, false)
 
 	if dragBar then
 		dragBar.Visible = false
@@ -2688,6 +2801,15 @@ function RayfieldLibrary:CreateWindow(Settings)
 	-- Tab
 	local FirstTab = false
 	local Window = {}
+
+	function Window:SetFooter(Footer)
+		setWindowFooter(Footer, true)
+	end
+
+	function Window:ClearFooter()
+		setWindowFooter(false, true)
+	end
+
 	function Window:CreateTab(Name, Image, Ext)
 		local SDone = false
 		local TabButton = TabList.Template:Clone()
@@ -4265,6 +4387,8 @@ function RayfieldLibrary:CreateWindow(Settings)
 	if dragBar then
 		TweenService:Create(dragBarCosmetic, TweenInfo.new(0.6, Enum.EasingStyle.Exponential), {BackgroundTransparency = 0.7}):Play()
 	end
+	footerReady = true
+	refreshFooterVisibility(true)
 
 	function Window.ModifyTheme(NewTheme)
 		local success = pcall(ChangeTheme, NewTheme)
@@ -4302,6 +4426,10 @@ end
 
 function RayfieldLibrary:IsVisible(): boolean
 	return not Hidden
+end
+
+function RayfieldLibrary:SetFooter(Footer)
+	setWindowFooter(Footer, true)
 end
 
 local hideHotkeyConnection -- Has to be initialized here since the connection is made later in the script
