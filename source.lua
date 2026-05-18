@@ -131,17 +131,16 @@ local settingsTable = {
 		rayfieldOpen = {Type = 'bind', Value = 'K', Name = 'Reverb UI Keybind', Order = 10},
 	},
 	Appearance = {
-		theme = {Type = 'dropdown', Value = 'Reverb', Name = 'Theme', Order = 10},
+		theme = {Type = 'hidden', Value = 'Reverb', Name = 'Theme', Options = {'Reverb'}, Order = 10},
 		uiScale = {Type = 'dropdown', Value = '100%', Name = 'UI Scale', Options = {'50%', '60%', '70%', '80%', '90%', '100%', '110%', '120%', '130%', '140%', '150%'}, Order = 20},
 		uiHeight = {Type = 'dropdown', Value = '100%', Name = 'UI Vertical Size', Options = {'50%', '60%', '70%', '80%', '90%', '100%', '110%', '120%', '130%', '140%', '150%'}, Order = 30},
 	},
 	Notifications = {
-		notificationDuration = {Type = 'dropdown', Value = 'Auto', Name = 'Notification Duration', Options = {'Short', 'Auto', 'Long', 'Persistent'}, Order = 10},
+		notificationDuration = {Type = 'dropdown', Value = 'Medium (5s)', Name = 'Notification Duration', Options = {'Small (3s)', 'Medium (5s)', 'Long (8s)'}, Order = 10},
 		notificationPosition = {Type = 'dropdown', Value = 'Top Right', Name = 'Notification Position', Options = {'Top Right', 'Top Left', 'Bottom Right', 'Bottom Left'}, Order = 20},
 	},
 	Search = {
-		searchScope = {Type = 'dropdown', Value = 'All Tabs + Pages', Name = 'Search Scope', Options = {'All Tabs + Pages', 'Current Page'}, Order = 10},
-		searchAutoJump = {Type = 'toggle', Value = true, Name = 'Auto-Jump to First Result', Order = 20},
+		searchScope = {Type = 'dropdown', Value = 'All Tabs + Panels', Name = 'Search Scope', Options = {'All Tabs + Panels', 'Current Panel'}, Order = 10},
 	},
 	Performance = {
 		statsOverlay = {Type = 'toggle', Value = false, Name = 'Show Performance Overlay', Order = 10},
@@ -889,6 +888,8 @@ end
 local useMobilePrompt = false
 if UserInputService.TouchEnabled then
 	useMobilePrompt = true
+	settingsTable.Appearance.uiScale.Value = "80%"
+	settingsTable.Appearance.uiHeight.Value = "70%"
 end
 
 
@@ -943,22 +944,33 @@ local updateTopbarPageButtons = function() end
 local applySettingsExperience = function() end
 
 local function getThemeNames()
-	local names = {}
-	for themeName, theme in pairs(RayfieldLibrary.Theme) do
-		if themeName ~= "Default" and type(theme) == "table" then
-			table.insert(names, themeName)
-		end
-	end
-	table.sort(names, function(a, b)
-		if a == "Reverb" then return true end
-		if b == "Reverb" then return false end
-		return a < b
-	end)
-	return names
+	return {"Reverb"}
 end
 
 local function normalizeThemeName(themeName)
-	return themeName == "Default" and "Reverb" or themeName
+	if type(themeName) ~= "string" then
+		return "Reverb"
+	end
+
+	return "Reverb"
+end
+
+local function normalizeSearchScope(scope)
+	if scope == "Current Page" or scope == "Current Panel" then
+		return "Current Panel"
+	end
+
+	return "All Tabs + Panels"
+end
+
+local function normalizeNotificationDuration(duration)
+	if duration == "Short" or duration == "Small" or duration == "Small (3s)" then
+		return "Small (3s)"
+	elseif duration == "Long" or duration == "Long (8s)" then
+		return "Long (8s)"
+	end
+
+	return "Medium (5s)"
 end
 
 local function readGlobal(name)
@@ -1255,16 +1267,14 @@ local function applyNotificationPosition()
 end
 
 local function getNotificationDuration(explicitDuration, calculatedDuration)
-	local setting = getSetting("Notifications", "notificationDuration") or "Auto"
-	if setting == "Short" then
-		return math.min(explicitDuration or calculatedDuration or 3, 4)
-	elseif setting == "Long" then
-		return math.max(explicitDuration or calculatedDuration or 7, 7)
-	elseif setting == "Persistent" then
-		return 12
+	local setting = normalizeNotificationDuration(getSetting("Notifications", "notificationDuration"))
+	if setting == "Small (3s)" then
+		return 3
+	elseif setting == "Long (8s)" then
+		return 8
 	end
 
-	return explicitDuration or calculatedDuration
+	return 5
 end
 
 applySettingsExperience = function()
@@ -2173,12 +2183,17 @@ local function updateSetting(category: string, setting: string, value: any)
 	if not settingsInitialized then
 		return
 	end
+	if category == "Appearance" and setting == "theme" then
+		value = normalizeThemeName(value)
+	elseif category == "Notifications" and setting == "notificationDuration" then
+		value = normalizeNotificationDuration(value)
+	elseif category == "Search" and setting == "searchScope" then
+		value = normalizeSearchScope(value)
+	end
 	settingsTable[category][setting].Value = value
 	overriddenSettings[category .. "." .. setting] = nil -- If user changes an overriden setting, remove the override
 
 	if category == "Appearance" and setting == "theme" then
-		value = normalizeThemeName(value)
-		settingsTable[category][setting].Value = value
 		pcall(ChangeTheme, value)
 		applySettingsExperience()
 	elseif category == "Appearance" or category == "Notifications" or category == "Search" or category == "General" then
@@ -2426,6 +2441,16 @@ local function createSettings(window)
 	settingsTable.Appearance.theme.Value = selectedTheme
 	if settingsTable.Appearance.theme.Element then
 		settingsTable.Appearance.theme.Element:Set(selectedTheme)
+	end
+	local selectedDuration = normalizeNotificationDuration(getSetting("Notifications", "notificationDuration"))
+	settingsTable.Notifications.notificationDuration.Value = selectedDuration
+	if settingsTable.Notifications.notificationDuration.Element then
+		settingsTable.Notifications.notificationDuration.Element:Set(selectedDuration)
+	end
+	local selectedScope = normalizeSearchScope(getSetting("Search", "searchScope"))
+	settingsTable.Search.searchScope.Value = selectedScope
+	if settingsTable.Search.searchScope.Element then
+		settingsTable.Search.searchScope.Element:Set(selectedScope)
 	end
 	pcall(ChangeTheme, selectedTheme)
 	setStatsOverlayVisible(getSetting("Performance", "statsOverlay"))
@@ -4219,7 +4244,7 @@ function RayfieldLibrary:CreateWindow(Settings)
 		if not success then
 			RayfieldLibrary:Notify({Title = 'Unable to Change Theme', Content = 'We are unable find a theme on file.', Image = 4400704299})
 		else
-			RayfieldLibrary:Notify({Title = 'Theme Changed', Content = 'Successfully changed theme to '..(typeof(NewTheme) == 'string' and NewTheme or 'Custom Theme')..'.', Image = 4483362748})
+			RayfieldLibrary:Notify({Title = 'Theme Changed', Content = 'Successfully changed theme to '..(typeof(NewTheme) == 'string' and normalizeThemeName(NewTheme) or 'Custom Theme')..'.', Image = 4483362748})
 		end
 	end
 
@@ -4406,8 +4431,7 @@ end
 local function updateGlobalSearch()
 	local queryText = Main.Search.Input.Text or ""
 	local query = string.lower(string.match(queryText, "^%s*(.-)%s*$"))
-	local searchEverywhere = getSetting("Search", "searchScope") ~= "Current Page"
-	local autoJump = getSetting("Search", "searchAutoJump") ~= false
+	local searchEverywhere = normalizeSearchScope(getSetting("Search", "searchScope")) ~= "Current Panel"
 
 	if #query == 0 then
 		for _, page in ipairs(getSearchablePages()) do
@@ -4430,18 +4454,13 @@ local function updateGlobalSearch()
 	end
 
 	if searchPage then
-		if searchEverywhere and autoJump and Elements.UIPageLayout.CurrentPage ~= searchPage then
+		if searchEverywhere and Elements.UIPageLayout.CurrentPage ~= searchPage then
 			Elements.UIPageLayout:JumpTo(searchPage)
 			currentPage = searchPage
 		end
 		updateTopbarPageButtons()
 
-		if searchEverywhere and not autoJump and currentPage and currentPage ~= searchPage then
-			applySearchToPage(currentPage, query, false, false)
-			setSearchTitle(currentPage, "Result in '"..searchPage.Name.."'")
-		else
-			applySearchToPage(searchPage, query, pageMatched, pageHasSearchResults(searchPage, query, pageMatched))
-		end
+		applySearchToPage(searchPage, query, pageMatched, pageHasSearchResults(searchPage, query, pageMatched))
 	else
 		if isSearchablePage(currentPage) then
 			applySearchToPage(currentPage, query, false, false)
