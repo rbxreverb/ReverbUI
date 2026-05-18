@@ -929,6 +929,8 @@ local StatsParagraph = nil
 local FooterLabel = nil
 local FooterText = nil
 local footerReady = false
+local ScrollCue = nil
+local scrollCueVisible = false
 local MainUIScale = nil
 local AccountInfo = nil
 local AccountParagraph = nil
@@ -941,6 +943,8 @@ local AccountLinks = {
 	Robux = "https://www.roblox.com/games/77740070380449/",
 }
 local updateStatsText = function() end
+local updateScrollCue = function() end
+local updateScrollCueLayout = function() end
 local updateStatsOverlayTheme = function() end
 local setStatsOverlayVisible = function() end
 local updateTopbarPageButtons = function() end
@@ -1350,6 +1354,9 @@ local function ChangeTheme(Theme)
 	if FooterLabel then
 		FooterLabel.TextColor3 = ReverbBrandColor
 	end
+	if ScrollCue then
+		ScrollCue.ImageColor3 = ReverbBrandColor
+	end
 
 	updateStatsOverlayTheme()
 end
@@ -1467,6 +1474,8 @@ local function setWindowFooter(footer, animate)
 		FooterLabel.Text = ""
 	end
 	refreshFooterVisibility(animate)
+	updateScrollCueLayout()
+	updateScrollCue()
 end
 
 local function ensureStatsOverlay()
@@ -1565,6 +1574,7 @@ RunService.RenderStepped:Connect(function(deltaTime)
 		frameCount = 0
 		elapsed = 0
 		updateStatsText()
+		updateScrollCue()
 	end
 end)
 
@@ -1677,6 +1687,81 @@ local function applyWindowIcon(icon)
 	Topbar.Icon.Image = img
 	Topbar.Icon.ImageRectOffset = rectOffset or Vector2.new(0, 0)
 	Topbar.Icon.ImageRectSize = rectSize or Vector2.new(0, 0)
+end
+
+updateScrollCueLayout = function()
+	if not ScrollCue then
+		return
+	end
+
+	ScrollCue.Position = UDim2.new(1, -24, 1, FooterText and -30 or -13)
+end
+
+local function ensureScrollCue()
+	if ScrollCue then
+		return ScrollCue
+	end
+
+	ScrollCue = Instance.new("ImageLabel")
+	ScrollCue.Name = "ReverbScrollCue"
+	ScrollCue.AnchorPoint = Vector2.new(0.5, 1)
+	ScrollCue.BackgroundTransparency = 1
+	ScrollCue.ImageColor3 = ReverbBrandColor
+	ScrollCue.ImageTransparency = 1
+	ScrollCue.Size = UDim2.new(0, 18, 0, 18)
+	ScrollCue.ZIndex = 49
+	ScrollCue.Parent = Main
+
+	local success, img, rectOffset, rectSize = pcall(resolveIcon, "chevron-down")
+	if success and img ~= "" then
+		ScrollCue.Image = img
+		ScrollCue.ImageRectOffset = rectOffset or Vector2.new(0, 0)
+		ScrollCue.ImageRectSize = rectSize or Vector2.new(0, 0)
+	else
+		ScrollCue.Image = ""
+	end
+
+	updateScrollCueLayout()
+	return ScrollCue
+end
+
+local function setScrollCueVisible(visible)
+	if scrollCueVisible == visible then
+		return
+	end
+
+	scrollCueVisible = visible
+	if visible then
+		ensureScrollCue()
+	end
+
+	if not ScrollCue then
+		return
+	end
+
+	updateScrollCueLayout()
+	TweenService:Create(ScrollCue, getTweenInfo(0.25, Enum.EasingStyle.Exponential), {ImageTransparency = visible and 0.45 or 1}):Play()
+end
+
+updateScrollCue = function()
+	if not footerReady or Hidden or Minimised or searchOpen or not Main.Visible or not Elements.Visible then
+		setScrollCueVisible(false)
+		return
+	end
+
+	local currentPage = Elements.UIPageLayout.CurrentPage
+	if not currentPage or currentPage.ClassName ~= "ScrollingFrame" then
+		setScrollCueVisible(false)
+		return
+	end
+
+	local canScrollFurther = false
+	pcall(function()
+		local remainingScroll = currentPage.AbsoluteCanvasSize.Y - currentPage.AbsoluteSize.Y - currentPage.CanvasPosition.Y
+		canScrollFurther = remainingScroll > 10
+	end)
+
+	setScrollCueVisible(canScrollFurther)
 end
 
 if Topbar:FindFirstChild('Settings') then
@@ -2170,6 +2255,7 @@ local function Hide(notify: boolean?)
 
 	setElementsVisible(false)
 	refreshFooterVisibility(true)
+	updateScrollCue()
 
 	task.wait(0.5)
 	Main.Visible = false
@@ -2198,6 +2284,7 @@ local function Maximise()
 
 	setTabButtonsVisible(true)
 	refreshFooterVisibility(true)
+	updateScrollCue()
 
 	task.wait(0.5)
 	Debounce = false
@@ -2250,6 +2337,7 @@ local function Unhide()
 
 	setElementsVisible(true)
 	refreshFooterVisibility(true)
+	updateScrollCue()
 
 	TweenService:Create(dragBarCosmetic, TweenInfo.new(0.25, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {BackgroundTransparency = 0.5}):Play()
 
@@ -2271,6 +2359,7 @@ local function Minimise()
 
 	setElementsVisible(false)
 	refreshFooterVisibility(true)
+	updateScrollCue()
 
 	TweenService:Create(dragBarCosmetic, TweenInfo.new(0.25, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {BackgroundTransparency = 1}):Play()
 	TweenService:Create(Topbar.UIStroke, TweenInfo.new(0.5, Enum.EasingStyle.Exponential), {Transparency = 0}):Play()
@@ -4389,6 +4478,7 @@ function RayfieldLibrary:CreateWindow(Settings)
 	end
 	footerReady = true
 	refreshFooterVisibility(true)
+	updateScrollCue()
 
 	function Window.ModifyTheme(NewTheme)
 		local success = pcall(ChangeTheme, NewTheme)
