@@ -1215,12 +1215,16 @@ local function getExpandedMainSize()
 	return UDim2.new(0, 500, 0, getExpandedMainHeight())
 end
 
+local function getVisualMainHeight()
+	return getExpandedMainHeight() * getUIScaleValue()
+end
+
 local function getDragOffset()
-	return math.floor(getExpandedMainHeight() / 2 + (useMobileSizing and 13 or 18))
+	return math.floor(getVisualMainHeight() / 2 + (useMobileSizing and 13 or 18) + 0.5)
 end
 
 local function getDragOffsetMobile()
-	return math.floor(getExpandedMainHeight() / 2 + 13)
+	return math.floor(getVisualMainHeight() / 2 + 13 + 0.5)
 end
 
 local function positionDragBar()
@@ -1452,10 +1456,11 @@ end
 
 local frameCount = 0
 local elapsed = 0
+local statsUpdateInterval = 0.25
 RunService.RenderStepped:Connect(function(deltaTime)
 	frameCount += 1
 	elapsed += deltaTime
-	if elapsed >= 1 then
+	if elapsed >= statsUpdateInterval then
 		PerformanceStats.FPS = math.floor(frameCount / elapsed + 0.5)
 		local ping = 0
 		pcall(function()
@@ -1626,6 +1631,27 @@ local function makeDraggable(object, dragObject, enableTaptic, tapticOffset)
 		offset += getService('GuiService'):GetGuiInset()
 	end
 
+	local function getTapticOffset()
+		if not tapticOffset then
+			return nil
+		end
+
+		if type(tapticOffset) == "function" then
+			return tapticOffset()
+		end
+
+		if type(tapticOffset) == "table" then
+			local selectedOffset = (useMobileSizing and tapticOffset[2]) or tapticOffset[1]
+			if type(selectedOffset) == "function" then
+				return selectedOffset()
+			end
+
+			return selectedOffset
+		end
+
+		return tapticOffset
+	end
+
 	local function connectFunctions()
 		if dragBar and enableTaptic then
 			dragBar.MouseEnter:Connect(function()
@@ -1674,12 +1700,13 @@ local function makeDraggable(object, dragObject, enableTaptic, tapticOffset)
 	local renderStepped = RunService.RenderStepped:Connect(function()
 		if dragging and not Hidden then
 			local position = UserInputService:GetMouseLocation() + relative + offset
-			if enableTaptic and tapticOffset then
+			local currentTapticOffset = getTapticOffset()
+			if enableTaptic and currentTapticOffset then
 				TweenService:Create(object, TweenInfo.new(0.4, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out), {Position = UDim2.fromOffset(position.X, position.Y)}):Play()
-				TweenService:Create(dragObject.Parent, TweenInfo.new(0.05, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out), {Position = UDim2.fromOffset(position.X, position.Y + ((useMobileSizing and tapticOffset[2]) or tapticOffset[1]))}):Play()
+				TweenService:Create(dragObject.Parent, TweenInfo.new(0.05, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out), {Position = UDim2.fromOffset(position.X, position.Y + currentTapticOffset)}):Play()
 			else
-				if dragBar and tapticOffset then
-					dragBar.Position = UDim2.fromOffset(position.X, position.Y + ((useMobileSizing and tapticOffset[2]) or tapticOffset[1]))
+				if dragBar and currentTapticOffset then
+					dragBar.Position = UDim2.fromOffset(position.X, position.Y + currentTapticOffset)
 				end
 				object.Position = UDim2.fromOffset(position.X, position.Y)
 			end
@@ -2580,8 +2607,8 @@ function RayfieldLibrary:CreateWindow(Settings)
 	end)
 
 
-	makeDraggable(Main, Topbar, false, {getDragOffset(), getDragOffsetMobile()})
-	if dragBar then positionDragBar() makeDraggable(Main, dragInteract, true, {getDragOffset(), getDragOffsetMobile()}) end
+	makeDraggable(Main, Topbar, false, {getDragOffset, getDragOffsetMobile})
+	if dragBar then positionDragBar() makeDraggable(Main, dragInteract, true, {getDragOffset, getDragOffsetMobile}) end
 
 	for _, TabButton in ipairs(TabList:GetChildren()) do
 		if TabButton.ClassName == "Frame" and TabButton.Name ~= "Placeholder" then
