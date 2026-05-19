@@ -150,7 +150,7 @@ local settingsTable = {
 		statsPosition = {Type = 'dropdown', Value = 'Top Right', Name = 'Overlay Position', Options = {'Top Right', 'Top Left', 'Bottom Right', 'Bottom Left'}, Order = 40},
 	},
 	Config = {
-		autoLoadSavedConfig = {Type = 'toggle', Value = false, Name = 'Auto-Load Saved Config', Order = 10},
+		autoLoadSavedConfig = {Type = 'toggle', Value = false, Name = 'Remember Last Config', Order = 10},
 	}
 }
 local settingsCategoryOrder = {"General", "Appearance", "Notifications", "Search", "Performance", "Config"}
@@ -2029,13 +2029,7 @@ local function LoadConfiguration(Configuration)
 	return changed
 end
 
-local function SaveConfiguration()
-	if not CEnabled or not globalLoaded then return end
-
-	if debugX then
-		print('Saving')
-	end
-
+local function collectConfigurationData()
 	local Data = {}
 	for i, v in pairs(RayfieldLibrary.Flags) do
 		if v.Type == "ColorPicker" then
@@ -2052,6 +2046,18 @@ local function SaveConfiguration()
 			end
 		end
 	end
+
+	return Data
+end
+
+local function SaveConfiguration()
+	if not CEnabled or not globalLoaded then return end
+
+	if debugX then
+		print('Saving')
+	end
+
+	local Data = collectConfigurationData()
 
 	if useStudio then
 		if script.Parent:FindFirstChild('configuration') then script.Parent.configuration:Destroy() end
@@ -2075,6 +2081,169 @@ local function SaveConfiguration()
 
 
 	callSafely(writefile, ConfigurationFolder .. "/" .. CFileName .. ConfigurationExtension, tostring(HttpService:JSONEncode(Data)))
+end
+
+local function normalizeConfigName(name)
+	name = string.match(tostring(name or ""), "^%s*(.-)%s*$")
+	if name == "" or name == "." or name == ".." then
+		return nil
+	end
+
+	return name
+end
+
+local function sanitizeConfigFileName(name)
+	name = normalizeConfigName(name) or "Config"
+	name = string.gsub(name, "[<>:\"/\\|%?%*]", "-")
+	name = string.gsub(name, "%s+", " ")
+	name = string.match(name, "^%s*(.-)%s*$")
+	if name == "" or name == "." or name == ".." then
+		return "Config"
+	end
+
+	return name
+end
+
+local function getNamedConfigFolder()
+	return ConfigurationFolder .. "/" .. sanitizeConfigFileName(CFileName or "Script") .. " Configs"
+end
+
+local function getNamedConfigIndexPath()
+	return getNamedConfigFolder() .. "/_index" .. ConfigurationExtension
+end
+
+local function getNamedConfigPath(name)
+	return getNamedConfigFolder() .. "/" .. sanitizeConfigFileName(name) .. ConfigurationExtension
+end
+
+local function readNamedConfigIndex()
+	local names = {}
+	local seen = {}
+	local indexPath = getNamedConfigIndexPath()
+
+	if isfile and callSafely(isfile, indexPath) then
+		local file = callSafely(readfile, indexPath)
+		local success, decoded = pcall(function()
+			return HttpService:JSONDecode(file)
+		end)
+
+		if success and type(decoded) == "table" then
+			for _, name in ipairs(decoded) do
+				local normalized = normalizeConfigName(name)
+				if normalized and not seen[normalized] then
+					seen[normalized] = true
+					table.insert(names, normalized)
+				end
+			end
+		end
+	end
+
+	table.sort(names)
+	return names
+end
+
+local function writeNamedConfigIndex(names)
+	ensureFolder(getNamedConfigFolder())
+	callSafely(writefile, getNamedConfigIndexPath(), HttpService:JSONEncode(names))
+end
+
+local function addNamedConfigToIndex(name)
+	name = normalizeConfigName(name)
+	if not name then return {} end
+
+	local names = readNamedConfigIndex()
+	if not table.find(names, name) then
+		table.insert(names, name)
+		table.sort(names)
+		writeNamedConfigIndex(names)
+	end
+
+	return names
+end
+
+local function saveNamedConfiguration(name)
+	name = normalizeConfigName(name)
+	if not name then
+		return false, "Enter a config name first."
+	end
+	if not CEnabled then
+		return false, "Configuration saving is not enabled for this script."
+	end
+	if not writefile then
+		return false, "Your executor does not support saving configs."
+	end
+
+	ensureFolder(ConfigurationFolder)
+	ensureFolder(getNamedConfigFolder())
+	callSafely(writefile, getNamedConfigPath(name), HttpService:JSONEncode(collectConfigurationData()))
+	addNamedConfigToIndex(name)
+	return true
+end
+
+local function loadConfigurationValue(value)
+	if type(value) == "table" then
+		return LoadConfiguration(HttpService:JSONEncode(value))
+	elseif type(value) == "string" and value ~= "" then
+		return LoadConfiguration(value)
+	end
+
+	return false
+end
+
+local function loadNamedConfiguration(name)
+	name = normalizeConfigName(name)
+	if not name then
+		return false, "Select a saved config first."
+	end
+	if not CEnabled then
+		return false, "Configuration saving is not enabled for this script."
+	end
+	if not isfile then
+		return false, "Your executor does not support loading saved configs."
+	end
+
+	local path = getNamedConfigPath(name)
+	if not callSafely(isfile, path) then
+		return false, "That saved config file was not found."
+	end
+
+	local file = callSafely(readfile, path)
+	local changed = loadConfigurationValue(file)
+	return true, changed
+end
+
+local function normalizeConfigPresets(presets)
+	local presetNames = {}
+	local presetMap = {}
+
+	if type(presets) ~= "table" then
+		return presetNames, presetMap
+	end
+
+	for key, preset in pairs(presets) do
+		local name
+		local value = preset
+
+		if type(preset) == "table" and (preset.Data or preset.Config or preset.Value or preset.JSON) then
+			name = preset.Name or preset.Title or key
+			value = preset.Data or preset.Config or preset.Value or preset.JSON
+		else
+			name = key
+		end
+
+		if type(name) == "number" and type(preset) == "table" then
+			name = preset.Name or preset.Title
+		end
+
+		name = normalizeConfigName(name)
+		if name and not presetMap[name] then
+			presetMap[name] = value
+			table.insert(presetNames, name)
+		end
+	end
+
+	table.sort(presetNames)
+	return presetNames, presetMap
 end
 
 function RayfieldLibrary:Notify(data) -- action e.g open messages
@@ -2686,64 +2855,6 @@ local function createSettings(window)
 			StatsParagraph = newTab:CreateParagraph({
 				Title = "Live Performance",
 				Content = formatPerformanceStats()
-			})
-		elseif categoryName == "Config" then
-			newTab:CreateParagraph({
-				Title = "Saved Config Behavior",
-				Content = "Auto-load decides whether saved control values should apply again on the next execution. Game-specific config tabs can use the same setting when loading their own presets."
-			})
-
-			newTab:CreateButton({
-				Name = "Load Saved Config Now",
-				Callback = function()
-					RayfieldLibrary:LoadConfiguration()
-				end,
-			})
-
-			newTab:CreateButton({
-				Name = "Save Current Config",
-				Callback = function()
-					SaveConfiguration()
-					RayfieldLibrary:Notify({
-						Title = "Reverb Config",
-						Content = "Current config saved.",
-						Duration = 4,
-						Image = "save",
-					})
-				end,
-			})
-
-			newTab:CreateButton({
-				Name = "Copy Current Config",
-				Callback = function()
-					local data = {}
-					for flagName, flag in pairs(RayfieldLibrary.Flags) do
-						if flag.Type == "ColorPicker" then
-							data[flagName] = PackColor(flag.Color)
-						elseif typeof(flag.CurrentValue) == 'boolean' then
-							data[flagName] = flag.CurrentValue
-						else
-							data[flagName] = flag.CurrentValue or flag.CurrentKeybind or flag.CurrentOption or flag.Color
-						end
-					end
-
-					if setclipboard then
-						setclipboard(HttpService:JSONEncode(data))
-						RayfieldLibrary:Notify({
-							Title = "Reverb Config",
-							Content = "Current config copied.",
-							Duration = 4,
-							Image = "copy",
-						})
-					else
-						RayfieldLibrary:Notify({
-							Title = "Clipboard Unavailable",
-							Content = "Your executor does not support copying configs.",
-							Duration = 5,
-							Image = "alert-circle",
-						})
-					end
-				end,
 			})
 		end
 	end
@@ -4518,6 +4629,176 @@ function RayfieldLibrary:CreateWindow(Settings)
 		end)
 
 		return Tab
+	end
+
+	function Window:CreateConfigTab(ConfigSettings)
+		ConfigSettings = type(ConfigSettings) == "table" and ConfigSettings or {}
+
+		local tabName = ConfigSettings.Name or ConfigSettings.TabName or "Configs"
+		local icon = ConfigSettings.Icon
+		if icon == nil then icon = "save" end
+
+		local configTab = Window:CreateTab(tabName, icon)
+		local noSavedOption = "No Saved Configs"
+		local selectedPreset = nil
+		local selectedSavedConfig = nil
+		local pendingConfigName = ""
+		local savedDropdown = nil
+
+		local presetNames, presetMap = normalizeConfigPresets(ConfigSettings.Presets or ConfigSettings.PresetConfigs or ConfigSettings.Configs)
+
+		local function getSavedOptions()
+			local names = readNamedConfigIndex()
+			if #names == 0 then
+				return {noSavedOption}
+			end
+
+			return names
+		end
+
+		local function getSelectedValue(value)
+			return type(value) == "table" and value[1] or value
+		end
+
+		local function validSavedSelection()
+			if not selectedSavedConfig or selectedSavedConfig == noSavedOption then
+				return nil
+			end
+
+			return selectedSavedConfig
+		end
+
+		local function refreshSavedDropdown(selectName)
+			local options = getSavedOptions()
+			if savedDropdown then
+				savedDropdown:Refresh(options)
+				if selectName and table.find(options, selectName) then
+					savedDropdown:Set({selectName})
+					selectedSavedConfig = selectName
+				elseif not table.find(options, selectedSavedConfig) then
+					selectedSavedConfig = options[1]
+					savedDropdown:Set({options[1]})
+				end
+			else
+				selectedSavedConfig = options[1]
+			end
+		end
+
+		if #presetNames > 0 then
+			selectedPreset = presetNames[1]
+			configTab:CreateSection("Preset Configs")
+			configTab:CreateDropdown({
+				Name = "Preset Config",
+				Options = presetNames,
+				CurrentOption = {selectedPreset},
+				MultipleOptions = false,
+				Callback = function(Value)
+					selectedPreset = getSelectedValue(Value)
+				end,
+			})
+			configTab:CreateButton({
+				Name = "Load Preset Config",
+				Callback = function()
+					local preset = selectedPreset and presetMap[selectedPreset]
+					if not preset then
+						RayfieldLibrary:Notify({
+							Title = "Reverb Config",
+							Content = "Select a preset config first.",
+							Duration = 4,
+							Image = "alert-circle",
+						})
+						return
+					end
+
+					loadConfigurationValue(preset)
+					RayfieldLibrary:Notify({
+						Title = "Reverb Config",
+						Content = "Preset config loaded.",
+						Duration = 4,
+						Image = "download",
+					})
+				end,
+			})
+		end
+
+		configTab:CreateSection("Saved Configs")
+		local savedOptions = getSavedOptions()
+		selectedSavedConfig = savedOptions[1]
+		savedDropdown = configTab:CreateDropdown({
+			Name = "Saved Config",
+			Options = savedOptions,
+			CurrentOption = {selectedSavedConfig},
+			MultipleOptions = false,
+			Callback = function(Value)
+				selectedSavedConfig = getSelectedValue(Value)
+			end,
+		})
+
+		configTab:CreateInput({
+			Name = "Config Name",
+			CurrentValue = "",
+			PlaceholderText = "New config name",
+			RemoveTextAfterFocusLost = false,
+			Callback = function(Value)
+				pendingConfigName = Value
+			end,
+		})
+
+		configTab:CreateButton({
+			Name = "Save Current Config",
+			Callback = function()
+				local name = normalizeConfigName(pendingConfigName) or validSavedSelection()
+				local success, message = saveNamedConfiguration(name)
+				if success then
+					refreshSavedDropdown(name)
+					RayfieldLibrary:Notify({
+						Title = "Reverb Config",
+						Content = "Config saved.",
+						Duration = 4,
+						Image = "save",
+					})
+				else
+					RayfieldLibrary:Notify({
+						Title = "Reverb Config",
+						Content = message or "Config could not be saved.",
+						Duration = 5,
+						Image = "alert-circle",
+					})
+				end
+			end,
+		})
+
+		configTab:CreateButton({
+			Name = "Load Saved Config",
+			Callback = function()
+				local name = validSavedSelection()
+				local success, message = loadNamedConfiguration(name)
+				if success then
+					RayfieldLibrary:Notify({
+						Title = "Reverb Config",
+						Content = "Saved config loaded.",
+						Duration = 4,
+						Image = "download",
+					})
+				else
+					RayfieldLibrary:Notify({
+						Title = "Reverb Config",
+						Content = message or "Config could not be loaded.",
+						Duration = 5,
+						Image = "alert-circle",
+					})
+				end
+			end,
+		})
+
+		configTab:CreateButton({
+			Name = "Refresh Saved Configs",
+			Callback = function()
+				refreshSavedDropdown()
+			end,
+		})
+
+		return configTab
 	end
 
 	Elements.Visible = true
