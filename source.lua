@@ -949,6 +949,8 @@ local AccountLinks = {
 	Premium = "https://rbxreverb.com/product/premium",
 	Discord = "https://discord.com/invite/TpJd6E8vKZ",
 	DiscordInviteCode = "TpJd6E8vKZ",
+	Blog = "https://rbxreverb.com/blog",
+	ReportBug = "https://discord.com/invite/TpJd6E8vKZ",
 	Robux = "https://www.roblox.com/games/77740070380449/",
 }
 local updateStatsText = function() end
@@ -1116,14 +1118,14 @@ local function formatPricingDetails()
 	return "1 Day       149 Robux\n7 Days      $4.99 / 699 Robux\n30 Days     $9.99 / 1249 Robux\nLifetime    $19.99 / 3199 Robux\n\nCash payments copy the Reverb Store link. Robux payments copy the automated Roblox purchase game."
 end
 
-local function copyAccountLink(label, url)
+local function copyLink(label, url, notifyTitle, image)
 	if setclipboard then
 		setclipboard(url)
 		RayfieldLibrary:Notify({
-			Title = "Reverb Account",
+			Title = notifyTitle or "Reverb",
 			Content = label.." link copied.",
 			Duration = 4,
-			Image = "copy",
+			Image = image or "copy",
 		})
 	else
 		RayfieldLibrary:Notify({
@@ -1135,8 +1137,13 @@ local function copyAccountLink(label, url)
 	end
 end
 
-local function joinAccountDiscord()
+local function copyAccountLink(label, url)
+	copyLink(label, url, "Reverb Account", "copy")
+end
+
+local function joinAccountDiscord(notifyTitle)
 	local openedDiscord = false
+	notifyTitle = notifyTitle or "Reverb Account"
 
 	if requestFunc then
 		local success, result = pcall(function()
@@ -1165,13 +1172,13 @@ local function joinAccountDiscord()
 
 	if openedDiscord then
 		RayfieldLibrary:Notify({
-			Title = "Reverb Account",
+			Title = notifyTitle,
 			Content = "Opening the Reverb Discord invite.",
 			Duration = 4,
 			Image = "message-circle",
 		})
 	else
-		copyAccountLink("Discord", AccountLinks.Discord)
+		copyLink("Discord", AccountLinks.Discord, notifyTitle, "copy")
 	end
 end
 
@@ -2246,6 +2253,104 @@ local function normalizeConfigPresets(presets)
 
 	table.sort(presetNames)
 	return presetNames, presetMap
+end
+
+local changelogCategoryOrder = {
+	{Key = "Added", Aliases = {"Added", "Additions", "New"}, Title = "Added"},
+	{Key = "Changed", Aliases = {"Changed", "Changes", "Improved", "Improvements"}, Title = "Changed"},
+	{Key = "Fixed", Aliases = {"Fixed", "Fixes"}, Title = "Fixed"},
+	{Key = "Patched", Aliases = {"Patched", "Patch", "Security"}, Title = "Patched"},
+	{Key = "Removed", Aliases = {"Removed", "Removals"}, Title = "Removed"},
+}
+
+local function normalizeChangelogEntries(entries)
+	if type(entries) ~= "table" then
+		return {}
+	end
+
+	if entries.Version or entries.Name or entries.Title or entries.Date then
+		return {entries}
+	end
+
+	return entries
+end
+
+local function getChangelogValue(entry, keys)
+	if type(entry) ~= "table" then
+		return nil
+	end
+
+	for _, key in ipairs(keys) do
+		local value = entry[key] or entry[string.lower(key)]
+		if value ~= nil then
+			return value
+		end
+	end
+
+	return nil
+end
+
+local function formatChangelogList(value)
+	if value == nil then
+		return nil
+	end
+
+	if type(value) == "string" then
+		value = string.match(value, "^%s*(.-)%s*$")
+		return value ~= "" and value or nil
+	end
+
+	if type(value) ~= "table" then
+		return "- "..tostring(value)
+	end
+
+	local lines = {}
+	for _, item in ipairs(value) do
+		if item ~= nil and tostring(item) ~= "" then
+			table.insert(lines, "- "..tostring(item))
+		end
+	end
+
+	return #lines > 0 and table.concat(lines, "\n") or nil
+end
+
+local function formatChangelogContent(entry)
+	local parts = {}
+	local summary = getChangelogValue(entry, {"Summary", "Description", "Notes"})
+	if summary then
+		table.insert(parts, tostring(summary))
+	end
+
+	for _, category in ipairs(changelogCategoryOrder) do
+		local value = getChangelogValue(entry, category.Aliases)
+		local formatted = formatChangelogList(value)
+		if formatted then
+			table.insert(parts, category.Title.."\n"..formatted)
+		end
+	end
+
+	local extraChanges = getChangelogValue(entry, {"Items", "Bullets"})
+	local formattedExtra = formatChangelogList(extraChanges)
+	if formattedExtra then
+		table.insert(parts, "Changes\n"..formattedExtra)
+	end
+
+	if #parts == 0 then
+		return "No changelog notes were provided for this update."
+	end
+
+	return table.concat(parts, "\n\n")
+end
+
+local function formatChangelogTitle(entry)
+	local version = getChangelogValue(entry, {"Version", "Name", "Title"}) or "Update"
+	local date = getChangelogValue(entry, {"Date", "Released", "ReleaseDate"})
+
+	if date and tostring(date) ~= "" then
+		return tostring(version).." - "..tostring(date)
+	end
+
+	return tostring(version)
 end
 
 function RayfieldLibrary:Notify(data) -- action e.g open messages
@@ -4808,6 +4913,89 @@ function RayfieldLibrary:CreateWindow(Settings)
 		})
 
 		return configTab
+	end
+
+	function Window:CreateChangelogTab(ChangelogSettings)
+		ChangelogSettings = type(ChangelogSettings) == "table" and ChangelogSettings or {}
+
+		local tabName = ChangelogSettings.Name or ChangelogSettings.TabName or "Changelog"
+		local icon = ChangelogSettings.Icon
+		if icon == nil then icon = "history" end
+
+		local changelogTab = Window:CreateTab(tabName, icon)
+		local entries = normalizeChangelogEntries(ChangelogSettings.Entries or ChangelogSettings.Updates or ChangelogSettings.Changes or ChangelogSettings.Changelog)
+		local latestColor = ChangelogSettings.LatestColor or ReverbBrandColor
+
+		if ChangelogSettings.ScriptName or ChangelogSettings.ScriptVersion then
+			local scriptTitle = ChangelogSettings.ScriptName or ChangelogSettings.Title or "Script"
+			local scriptVersion = ChangelogSettings.ScriptVersion and (" - "..tostring(ChangelogSettings.ScriptVersion)) or ""
+			changelogTab:CreateLabel(tostring(scriptTitle)..scriptVersion, "scroll-text", latestColor, true)
+		end
+
+		if #entries > 0 then
+			for index, entry in ipairs(entries) do
+				if index == 1 then
+					changelogTab:CreateSection("Latest Update")
+					changelogTab:CreateLabel("Latest - "..formatChangelogTitle(entry), "sparkles", latestColor, true)
+				elseif index == 2 then
+					changelogTab:CreateSection("Previous Updates")
+					changelogTab:CreateLabel(formatChangelogTitle(entry), "history", latestColor, true)
+				else
+					changelogTab:CreateLabel(formatChangelogTitle(entry), "history", latestColor, true)
+				end
+
+				changelogTab:CreateParagraph({
+					Title = getChangelogValue(entry, {"Subtitle", "Header"}) or "Update Notes",
+					Content = formatChangelogContent(entry)
+				})
+			end
+		else
+			changelogTab:CreateSection("Latest Update")
+			changelogTab:CreateLabel("Changelog Coming Soon", "scroll-text", latestColor, true)
+			changelogTab:CreateParagraph({
+				Title = "Update Notes",
+				Content = "No changelog entries have been added for this script yet."
+			})
+		end
+
+		local fullChangelogUrl = ChangelogSettings.FullChangelogUrl or ChangelogSettings.BlogUrl or AccountLinks.Blog
+		local discordUrl = ChangelogSettings.DiscordUrl or AccountLinks.Discord
+		local reportBugUrl = ChangelogSettings.ReportBugUrl or ChangelogSettings.BugReportUrl or AccountLinks.ReportBug
+
+		changelogTab:CreateSection("Links")
+		if fullChangelogUrl then
+			changelogTab:CreateButton({
+				Name = "View Full Changelog",
+				Ext = true,
+				Callback = function()
+					copyLink("Full changelog", fullChangelogUrl, "Reverb Changelog", "external-link")
+				end,
+			})
+		end
+		if discordUrl then
+			changelogTab:CreateButton({
+				Name = "Join Discord",
+				Ext = true,
+				Callback = function()
+					if discordUrl == AccountLinks.Discord then
+						joinAccountDiscord("Reverb Changelog")
+					else
+						copyLink("Discord", discordUrl, "Reverb Changelog", "copy")
+					end
+				end,
+			})
+		end
+		if reportBugUrl then
+			changelogTab:CreateButton({
+				Name = "Report Bug",
+				Ext = true,
+				Callback = function()
+					copyLink("Bug report", reportBugUrl, "Reverb Changelog", "bug")
+				end,
+			})
+		end
+
+		return changelogTab
 	end
 
 	Elements.Visible = true
