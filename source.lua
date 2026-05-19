@@ -954,6 +954,7 @@ local updateStatsOverlayTheme = function() end
 local setStatsOverlayVisible = function() end
 local updateTopbarPageButtons = function() end
 local refreshFooterVisibility = function() end
+local updateSearchPlaceholder = function() end
 local applySettingsExperience = function() end
 
 local function getThemeNames()
@@ -1300,6 +1301,7 @@ applySettingsExperience = function()
 	applyNotificationPosition()
 	refreshFooterVisibility(true)
 	updateScrollCueLayout()
+	updateSearchPlaceholder()
 	updateStatsOverlayTheme()
 	setStatsOverlayVisible(getSetting("Performance", "statsOverlay"))
 	updateStatsText()
@@ -2091,9 +2093,18 @@ function RayfieldLibrary:Notify(data) -- action e.g open messages
 	end)
 end
 
+updateSearchPlaceholder = function()
+	if normalizeSearchScope(getSetting("Search", "searchScope")) == "Current Panel" then
+		Main.Search.Input.PlaceholderText = "Search current tab or panel"
+	else
+		Main.Search.Input.PlaceholderText = "Search all tabs and panels"
+	end
+end
+
 local function openSearch()
 	searchOpen = true
 	updateTopbarPageButtons()
+	updateSearchPlaceholder()
 
 	Main.Search.BackgroundTransparency = 1
 	Main.Search.Shadow.ImageTransparency = 1
