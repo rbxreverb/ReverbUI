@@ -137,7 +137,7 @@ local settingsTable = {
 		footerText = {Type = 'toggle', Value = true, Name = 'Show Script Info', Order = 40},
 	},
 	Notifications = {
-		notificationDuration = {Type = 'dropdown', Value = 'Medium (5s)', Name = 'Notification Duration', Options = {'Small (3s)', 'Medium (5s)', 'Long (8s)'}, Order = 10},
+		notificationDuration = {Type = 'dropdown', Value = 'Medium (5s)', Name = 'Notification Duration', Options = {'Short (3s)', 'Medium (5s)', 'Long (8s)'}, Order = 10},
 		notificationPosition = {Type = 'dropdown', Value = 'Top Right', Name = 'Notification Position', Options = {'Top Right', 'Top Left', 'Bottom Right', 'Bottom Left'}, Order = 20},
 	},
 	Search = {
@@ -984,7 +984,7 @@ end
 
 local function normalizeNotificationDuration(duration)
 	if duration == "Short" or duration == "Small" or duration == "Small (3s)" then
-		return "Small (3s)"
+		return "Short (3s)"
 	elseif duration == "Long" or duration == "Long (8s)" then
 		return "Long (8s)"
 	end
@@ -1295,7 +1295,7 @@ end
 
 local function getNotificationDuration(explicitDuration, calculatedDuration)
 	local setting = normalizeNotificationDuration(getSetting("Notifications", "notificationDuration"))
-	if setting == "Small (3s)" then
+	if setting == "Short (3s)" then
 		return 3
 	elseif setting == "Long (8s)" then
 		return 8
