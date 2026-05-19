@@ -153,7 +153,7 @@ local settingsTable = {
 		autoLoadSavedConfig = {Type = 'toggle', Value = false, Name = 'Remember Last Config', Order = 10},
 	}
 }
-local settingsCategoryOrder = {"General", "Appearance", "Notifications", "Search", "Performance", "Config"}
+local settingsCategoryOrder = {"General", "Config", "Appearance", "Search", "Notifications", "Performance"}
 
 -- Settings that have been overridden by the developer. These will not be saved to the user's configuration file
 -- Overridden settings always take precedence over settings in the configuration file, and are cleared if the user changes the setting in the UI
@@ -943,6 +943,8 @@ local AccountInfo = nil
 local AccountParagraph = nil
 local ReverbBrandColor = Color3.fromRGB(0, 226, 248)
 local ReverbMutedAccountColor = Color3.fromRGB(95, 108, 118)
+local AccountPanelName = "Reverb Account"
+local SettingsPanelName = "Reverb Settings"
 local AccountLinks = {
 	Premium = "https://rbxreverb.com/product/premium",
 	Discord = "https://discord.com/invite/TpJd6E8vKZ",
@@ -1997,7 +1999,7 @@ local function UnpackColor(Color)
 	return Color3.fromRGB(Color.R, Color.G, Color.B)
 end
 
-local function LoadConfiguration(Configuration)
+local function LoadConfiguration(Configuration, suppressMissingWarnings)
 	local success, Data = pcall(function() return HttpService:JSONDecode(Configuration) end)
 	local changed
 
@@ -2019,7 +2021,7 @@ local function LoadConfiguration(Configuration)
 					end
 				end
 			end)
-		else
+		elseif not suppressMissingWarnings then
 			warn("ReverbLib | Unable to find '"..FlagName.. "' in the save file.")
 			print("The error above may not be an issue if new elements have been added or not been set values.")
 			--RayfieldLibrary:Notify({Title = "ReverbLib Flags", Content = "ReverbLib was unable to find '"..FlagName.. "' in the save file. Check the ReverbLib documentation for help.", Image = 3944688398})
@@ -2180,11 +2182,11 @@ local function saveNamedConfiguration(name)
 	return true
 end
 
-local function loadConfigurationValue(value)
+local function loadConfigurationValue(value, suppressMissingWarnings)
 	if type(value) == "table" then
-		return LoadConfiguration(HttpService:JSONEncode(value))
+		return LoadConfiguration(HttpService:JSONEncode(value), suppressMissingWarnings)
 	elseif type(value) == "string" and value ~= "" then
-		return LoadConfiguration(value)
+		return LoadConfiguration(value, suppressMissingWarnings)
 	end
 
 	return false
@@ -2721,14 +2723,14 @@ local function createAccount(window)
 		return
 	end
 
-	local newTab = window:CreateTab('Reverb Account', "circle-user-round", true)
+	local newTab = window:CreateTab(AccountPanelName, "circle-user-round", true)
 
-	if TabList['Reverb Account'] then
-		TabList['Reverb Account'].LayoutOrder = 999
+	if TabList[AccountPanelName] then
+		TabList[AccountPanelName].LayoutOrder = 999
 	end
 
-	if Elements['Reverb Account'] then
-		Elements['Reverb Account'].LayoutOrder = 999
+	if Elements[AccountPanelName] then
+		Elements[AccountPanelName].LayoutOrder = 999
 	end
 
 	newTab:CreateSection("Access Overview")
@@ -2775,14 +2777,14 @@ local function createSettings(window)
 		return
 	end
 
-	local newTab = window:CreateTab('ReverbLib Settings', 0, true)
+	local newTab = window:CreateTab(SettingsPanelName, 0, true)
 
-	if TabList['ReverbLib Settings'] then
-		TabList['ReverbLib Settings'].LayoutOrder = 1000
+	if TabList[SettingsPanelName] then
+		TabList[SettingsPanelName].LayoutOrder = 1000
 	end
 
-	if Elements['ReverbLib Settings'] then
-		Elements['ReverbLib Settings'].LayoutOrder = 1000
+	if Elements[SettingsPanelName] then
+		Elements[SettingsPanelName].LayoutOrder = 1000
 	end
 
 	-- Create sections and elements
@@ -4692,12 +4694,14 @@ function RayfieldLibrary:CreateWindow(Settings)
 				Options = presetNames,
 				CurrentOption = {selectedPreset},
 				MultipleOptions = false,
+				Ext = true,
 				Callback = function(Value)
 					selectedPreset = getSelectedValue(Value)
 				end,
 			})
 			configTab:CreateButton({
 				Name = "Load Preset Config",
+				Ext = true,
 				Callback = function()
 					local preset = selectedPreset and presetMap[selectedPreset]
 					if not preset then
@@ -4710,7 +4714,7 @@ function RayfieldLibrary:CreateWindow(Settings)
 						return
 					end
 
-					loadConfigurationValue(preset)
+					loadConfigurationValue(preset, true)
 					RayfieldLibrary:Notify({
 						Title = "Reverb Config",
 						Content = "Preset config loaded.",
@@ -4729,8 +4733,33 @@ function RayfieldLibrary:CreateWindow(Settings)
 			Options = savedOptions,
 			CurrentOption = {selectedSavedConfig},
 			MultipleOptions = false,
+			Ext = true,
 			Callback = function(Value)
 				selectedSavedConfig = getSelectedValue(Value)
+			end,
+		})
+
+		configTab:CreateButton({
+			Name = "Load Saved Config",
+			Ext = true,
+			Callback = function()
+				local name = validSavedSelection()
+				local success, message = loadNamedConfiguration(name)
+				if success then
+					RayfieldLibrary:Notify({
+						Title = "Reverb Config",
+						Content = "Saved config loaded.",
+						Duration = 4,
+						Image = "download",
+					})
+				else
+					RayfieldLibrary:Notify({
+						Title = "Reverb Config",
+						Content = message or "Config could not be loaded.",
+						Duration = 5,
+						Image = "alert-circle",
+					})
+				end
 			end,
 		})
 
@@ -4739,6 +4768,7 @@ function RayfieldLibrary:CreateWindow(Settings)
 			CurrentValue = "",
 			PlaceholderText = "New config name",
 			RemoveTextAfterFocusLost = false,
+			Ext = true,
 			Callback = function(Value)
 				pendingConfigName = Value
 			end,
@@ -4746,6 +4776,7 @@ function RayfieldLibrary:CreateWindow(Settings)
 
 		configTab:CreateButton({
 			Name = "Save Current Config",
+			Ext = true,
 			Callback = function()
 				local name = normalizeConfigName(pendingConfigName) or validSavedSelection()
 				local success, message = saveNamedConfiguration(name)
@@ -4769,30 +4800,8 @@ function RayfieldLibrary:CreateWindow(Settings)
 		})
 
 		configTab:CreateButton({
-			Name = "Load Saved Config",
-			Callback = function()
-				local name = validSavedSelection()
-				local success, message = loadNamedConfiguration(name)
-				if success then
-					RayfieldLibrary:Notify({
-						Title = "Reverb Config",
-						Content = "Saved config loaded.",
-						Duration = 4,
-						Image = "download",
-					})
-				else
-					RayfieldLibrary:Notify({
-						Title = "Reverb Config",
-						Content = message or "Config could not be loaded.",
-						Duration = 5,
-						Image = "alert-circle",
-					})
-				end
-			end,
-		})
-
-		configTab:CreateButton({
 			Name = "Refresh Saved Configs",
+			Ext = true,
 			Callback = function()
 				refreshSavedDropdown()
 			end,
@@ -5103,8 +5112,8 @@ Main.Search.Input.FocusLost:Connect(function(enterPressed)
 end)
 
 local TopbarPageTargets = {
-	Account = "Reverb Account",
-	Settings = "ReverbLib Settings",
+	Account = AccountPanelName,
+	Settings = SettingsPanelName,
 }
 
 local function isTopbarPageButtonActive(button)
@@ -5170,13 +5179,13 @@ end
 
 if Topbar:FindFirstChild('Account') then
 	Topbar.Account.MouseButton1Click:Connect(function()
-		openInternalTab('Reverb Account')
+		openInternalTab(AccountPanelName)
 	end)
 end
 
 if Topbar:FindFirstChild('Settings') then
 	Topbar.Settings.MouseButton1Click:Connect(function()
-		openInternalTab('ReverbLib Settings')
+		openInternalTab(SettingsPanelName)
 	end)
 end
 
