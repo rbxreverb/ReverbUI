@@ -134,6 +134,7 @@ local settingsTable = {
 		theme = {Type = 'hidden', Value = 'Reverb', Name = 'Theme', Options = {'Reverb'}, Order = 10},
 		uiScale = {Type = 'dropdown', Value = '100%', Name = 'UI Scale', Options = {'50%', '60%', '70%', '80%', '90%', '100%', '110%', '120%', '130%', '140%', '150%'}, Order = 20},
 		uiHeight = {Type = 'dropdown', Value = '100%', Name = 'UI Vertical Size', Options = {'50%', '60%', '70%', '80%', '90%', '100%', '110%', '120%', '130%', '140%', '150%'}, Order = 30},
+		footerText = {Type = 'toggle', Value = true, Name = 'Show Footer Text', Order = 40},
 	},
 	Notifications = {
 		notificationDuration = {Type = 'dropdown', Value = 'Medium (5s)', Name = 'Notification Duration', Options = {'Small (3s)', 'Medium (5s)', 'Long (8s)'}, Order = 10},
@@ -167,6 +168,10 @@ local function getSetting(category: string, name: string): any
 	elseif settingsTable[category] and settingsTable[category][name] ~= nil then
 		return settingsTable[category][name].Value
 	end
+end
+
+local function isFooterTextEnabled()
+	return getSetting("Appearance", "footerText") ~= false
 end
 
 local HttpService = getService('HttpService')
@@ -948,6 +953,7 @@ local updateScrollCueLayout = function() end
 local updateStatsOverlayTheme = function() end
 local setStatsOverlayVisible = function() end
 local updateTopbarPageButtons = function() end
+local refreshFooterVisibility = function() end
 local applySettingsExperience = function() end
 
 local function getThemeNames()
@@ -1292,9 +1298,12 @@ applySettingsExperience = function()
 	applyUIScale()
 	applyWindowSize()
 	applyNotificationPosition()
+	refreshFooterVisibility(true)
+	updateScrollCueLayout()
 	updateStatsOverlayTheme()
 	setStatsOverlayVisible(getSetting("Performance", "statsOverlay"))
 	updateStatsText()
+	updateScrollCue()
 end
 
 local function ChangeTheme(Theme)
@@ -1449,12 +1458,12 @@ local function ensureFooterLabel()
 	return FooterLabel
 end
 
-local function refreshFooterVisibility(animate)
+refreshFooterVisibility = function(animate)
 	if not FooterLabel then
 		return
 	end
 
-	local shouldShow = footerReady and FooterText ~= nil and FooterText ~= "" and not Hidden and not Minimised
+	local shouldShow = footerReady and isFooterTextEnabled() and FooterText ~= nil and FooterText ~= "" and not Hidden and not Minimised
 	local targetTransparency = shouldShow and 0.15 or 1
 	FooterLabel.Visible = true
 	if animate then
@@ -1694,7 +1703,8 @@ updateScrollCueLayout = function()
 		return
 	end
 
-	ScrollCue.Position = UDim2.new(1, -24, 1, FooterText and -30 or -13)
+	local footerOccupiesSpace = isFooterTextEnabled() and FooterText ~= nil and FooterText ~= ""
+	ScrollCue.Position = UDim2.new(1, -24, 1, footerOccupiesSpace and -30 or -13)
 end
 
 local function ensureScrollCue()
