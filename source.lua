@@ -134,7 +134,7 @@ local settingsTable = {
 		theme = {Type = 'hidden', Value = 'Reverb', Name = 'Theme', Options = {'Reverb'}, Order = 10},
 		uiScale = {Type = 'dropdown', Value = '100%', Name = 'UI Scale', Options = {'50%', '60%', '70%', '80%', '90%', '100%', '110%', '120%', '130%', '140%', '150%'}, Order = 20},
 		uiHeight = {Type = 'dropdown', Value = '100%', Name = 'UI Vertical Size', Options = {'50%', '60%', '70%', '80%', '90%', '100%', '110%', '120%', '130%', '140%', '150%'}, Order = 30},
-		footerText = {Type = 'toggle', Value = true, Name = 'Show Footer Text', Order = 40},
+		footerText = {Type = 'toggle', Value = true, Name = 'Show Script Info', Order = 40},
 	},
 	Notifications = {
 		notificationDuration = {Type = 'dropdown', Value = 'Medium (5s)', Name = 'Notification Duration', Options = {'Small (3s)', 'Medium (5s)', 'Long (8s)'}, Order = 10},
@@ -931,8 +931,10 @@ local PerformanceStats = {FPS = 0, Ping = 0}
 local StatsOverlay = nil
 local StatsOverlayText = nil
 local StatsParagraph = nil
+local FooterBar = nil
 local FooterLabel = nil
 local FooterText = nil
+local FooterSpacerName = "ReverbFooterSpacer"
 local footerReady = false
 local ScrollCue = nil
 local scrollCueVisible = false
@@ -954,6 +956,7 @@ local updateStatsOverlayTheme = function() end
 local setStatsOverlayVisible = function() end
 local updateTopbarPageButtons = function() end
 local refreshFooterVisibility = function() end
+local updateFooterSpacers = function() end
 local updateSearchPlaceholder = function() end
 local applySettingsExperience = function() end
 
@@ -985,6 +988,10 @@ local function normalizeNotificationDuration(duration)
 	end
 
 	return "Medium (5s)"
+end
+
+local function footerHasContent()
+	return isFooterTextEnabled() and FooterText ~= nil and FooterText ~= ""
 end
 
 local function readGlobal(name)
@@ -1300,6 +1307,7 @@ applySettingsExperience = function()
 	applyWindowSize()
 	applyNotificationPosition()
 	refreshFooterVisibility(true)
+	updateFooterSpacers()
 	updateScrollCueLayout()
 	updateSearchPlaceholder()
 	updateStatsOverlayTheme()
@@ -1355,13 +1363,20 @@ local function ChangeTheme(Theme)
 
 	for _, TabPage in ipairs(Elements:GetChildren()) do
 		for _, Element in ipairs(TabPage:GetChildren()) do
-			if Element.ClassName == "Frame" and Element.Name ~= "Placeholder" and Element.Name ~= "SectionSpacing" and Element.Name ~= "Divider" and Element.Name ~= "SectionTitle" and Element.Name ~= "SearchTitle-fsefsefesfsefesfesfThanks" then
+			if Element.ClassName == "Frame" and Element.Name ~= "Placeholder" and Element.Name ~= "SectionSpacing" and Element.Name ~= FooterSpacerName and Element.Name ~= "Divider" and Element.Name ~= "SectionTitle" and Element.Name ~= "SearchTitle-fsefsefesfsefesfesfThanks" then
 				Element.BackgroundColor3 = SelectedTheme.ElementBackground
 				Element.UIStroke.Color = SelectedTheme.ElementStroke
 			end
 		end
 	end
 
+	if FooterBar then
+		FooterBar.BackgroundColor3 = SelectedTheme.ElementBackground
+		local stroke = FooterBar:FindFirstChildWhichIsA("UIStroke")
+		if stroke then
+			stroke.Color = SelectedTheme.ElementStroke
+		end
+	end
 	if FooterLabel then
 		FooterLabel.TextColor3 = ReverbBrandColor
 	end
@@ -1440,13 +1455,34 @@ local function ensureFooterLabel()
 		return FooterLabel
 	end
 
+	FooterBar = Instance.new("Frame")
+	FooterBar.Name = "ReverbFooterBar"
+	FooterBar.AnchorPoint = Vector2.new(0.5, 1)
+	FooterBar.BackgroundColor3 = SelectedTheme.ElementBackground
+	FooterBar.BackgroundTransparency = 1
+	FooterBar.ClipsDescendants = true
+	FooterBar.Position = UDim2.new(0.5, 0, 1, -7)
+	FooterBar.Size = UDim2.new(1, -36, 0, 24)
+	FooterBar.ZIndex = 49
+	FooterBar.Parent = Main
+
+	local corner = Instance.new("UICorner")
+	corner.CornerRadius = UDim.new(0, 6)
+	corner.Parent = FooterBar
+
+	local stroke = Instance.new("UIStroke")
+	stroke.Color = SelectedTheme.ElementStroke
+	stroke.Transparency = 1
+	stroke.Thickness = 1
+	stroke.Parent = FooterBar
+
 	FooterLabel = Instance.new("TextLabel")
 	FooterLabel.Name = "ReverbFooter"
-	FooterLabel.AnchorPoint = Vector2.new(0.5, 1)
+	FooterLabel.AnchorPoint = Vector2.new(0.5, 0.5)
 	FooterLabel.BackgroundTransparency = 1
 	FooterLabel.Font = Enum.Font.GothamMedium
-	FooterLabel.Position = UDim2.new(0.5, 0, 1, -10)
-	FooterLabel.Size = UDim2.new(1, -48, 0, 16)
+	FooterLabel.Position = UDim2.new(0.5, 0, 0.5, 0)
+	FooterLabel.Size = UDim2.new(1, -18, 1, 0)
 	FooterLabel.Text = ""
 	FooterLabel.TextColor3 = ReverbBrandColor
 	FooterLabel.TextSize = 12
@@ -1455,7 +1491,7 @@ local function ensureFooterLabel()
 	FooterLabel.TextXAlignment = Enum.TextXAlignment.Center
 	FooterLabel.TextYAlignment = Enum.TextYAlignment.Center
 	FooterLabel.ZIndex = 50
-	FooterLabel.Parent = Main
+	FooterLabel.Parent = FooterBar
 
 	return FooterLabel
 end
@@ -1465,13 +1501,32 @@ refreshFooterVisibility = function(animate)
 		return
 	end
 
-	local shouldShow = footerReady and isFooterTextEnabled() and FooterText ~= nil and FooterText ~= "" and not Hidden and not Minimised
-	local targetTransparency = shouldShow and 0.15 or 1
+	local shouldShow = footerReady and footerHasContent() and not Hidden and not Minimised
+	local targetTextTransparency = shouldShow and 0.08 or 1
+	local targetBackgroundTransparency = shouldShow and 0.12 or 1
+	local targetStrokeTransparency = shouldShow and 0.72 or 1
+	if FooterBar then
+		FooterBar.Visible = true
+	end
 	FooterLabel.Visible = true
 	if animate then
-		TweenService:Create(FooterLabel, getTweenInfo(0.3, Enum.EasingStyle.Exponential), {TextTransparency = targetTransparency}):Play()
+		if FooterBar then
+			TweenService:Create(FooterBar, getTweenInfo(0.3, Enum.EasingStyle.Exponential), {BackgroundTransparency = targetBackgroundTransparency}):Play()
+			local stroke = FooterBar:FindFirstChildWhichIsA("UIStroke")
+			if stroke then
+				TweenService:Create(stroke, getTweenInfo(0.3, Enum.EasingStyle.Exponential), {Transparency = targetStrokeTransparency}):Play()
+			end
+		end
+		TweenService:Create(FooterLabel, getTweenInfo(0.3, Enum.EasingStyle.Exponential), {TextTransparency = targetTextTransparency}):Play()
 	else
-		FooterLabel.TextTransparency = targetTransparency
+		if FooterBar then
+			FooterBar.BackgroundTransparency = targetBackgroundTransparency
+			local stroke = FooterBar:FindFirstChildWhichIsA("UIStroke")
+			if stroke then
+				stroke.Transparency = targetStrokeTransparency
+			end
+		end
+		FooterLabel.TextTransparency = targetTextTransparency
 	end
 end
 
@@ -1485,6 +1540,7 @@ local function setWindowFooter(footer, animate)
 		FooterLabel.Text = ""
 	end
 	refreshFooterVisibility(animate)
+	updateFooterSpacers()
 	updateScrollCueLayout()
 	updateScrollCue()
 end
@@ -1700,13 +1756,34 @@ local function applyWindowIcon(icon)
 	Topbar.Icon.ImageRectSize = rectSize or Vector2.new(0, 0)
 end
 
+updateFooterSpacers = function()
+	local footerActive = footerHasContent()
+	local spacerHeight = footerActive and 30 or 0
+
+	for _, page in ipairs(Elements:GetChildren()) do
+		if page.ClassName == "ScrollingFrame" and page.Name ~= "Template" and page.Name ~= "Placeholder" then
+			local spacer = page:FindFirstChild(FooterSpacerName)
+			if not spacer then
+				spacer = Instance.new("Frame")
+				spacer.Name = FooterSpacerName
+				spacer.BackgroundTransparency = 1
+				spacer.BorderSizePixel = 0
+				spacer.LayoutOrder = 99999
+				spacer.Parent = page
+			end
+
+			spacer.Size = UDim2.new(1, 0, 0, spacerHeight)
+			spacer.Visible = footerActive
+		end
+	end
+end
+
 updateScrollCueLayout = function()
 	if not ScrollCue then
 		return
 	end
 
-	local footerOccupiesSpace = isFooterTextEnabled() and FooterText ~= nil and FooterText ~= ""
-	ScrollCue.Position = UDim2.new(1, -24, 1, footerOccupiesSpace and -30 or -13)
+	ScrollCue.Position = UDim2.new(1, -24, 1, footerHasContent() and -39 or -13)
 end
 
 local function ensureScrollCue()
@@ -2174,7 +2251,7 @@ local function setElementsVisible(show)
 		if tab.Name ~= "Template" and tab.ClassName == "ScrollingFrame" and tab.Name ~= "Placeholder" then
 			for _, element in ipairs(tab:GetChildren()) do
 				if element.ClassName == "Frame" then
-					if element.Name ~= "SectionSpacing" and element.Name ~= "Placeholder" then
+					if element.Name ~= "SectionSpacing" and element.Name ~= "Placeholder" and element.Name ~= FooterSpacerName then
 						if element.Name == "SectionTitle" or element.Name == 'SearchTitle-fsefsefesfsefesfesfThanks' then
 							TweenService:Create(element.Title, TweenInfo.new(0.3, Enum.EasingStyle.Exponential), {TextTransparency = show and 0.4 or 1}):Play()
 						elseif element.Name == 'Divider' then
@@ -2965,6 +3042,7 @@ function RayfieldLibrary:CreateWindow(Settings)
 		end
 
 		TabPage.Parent = Elements
+		updateFooterSpacers()
 		if not FirstTab and not Ext then
 			Elements.UIPageLayout.Animated = false
 			Elements.UIPageLayout:JumpTo(TabPage)
@@ -4592,7 +4670,7 @@ local function getSearchablePages()
 end
 
 local function elementMatchesSearch(element, query)
-	if not element or element.Name == "Placeholder" or element.Name == SearchTitleName or element.Name == "SectionTitle" then
+	if not element or element.Name == "Placeholder" or element.Name == FooterSpacerName or element.Name == SearchTitleName or element.Name == "SectionTitle" then
 		return false
 	end
 
@@ -4638,7 +4716,7 @@ local function resetSearchPage(page)
 	setSearchTitle(page, nil)
 
 	for _, element in ipairs(page:GetChildren()) do
-		if element.ClassName ~= 'UIListLayout' and element.Name ~= 'Placeholder' and element.Name ~= SearchTitleName then
+		if element.ClassName ~= 'UIListLayout' and element.Name ~= 'Placeholder' and element.Name ~= FooterSpacerName and element.Name ~= SearchTitleName then
 			element.Visible = true
 		end
 	end
@@ -4684,7 +4762,7 @@ local function applySearchToPage(page, query, pageMatched, hasResults)
 	end
 
 	for _, element in ipairs(page:GetChildren()) do
-		if element.ClassName ~= 'UIListLayout' and element.Name ~= 'Placeholder' and element.Name ~= SearchTitleName then
+		if element.ClassName ~= 'UIListLayout' and element.Name ~= 'Placeholder' and element.Name ~= FooterSpacerName and element.Name ~= SearchTitleName then
 			if element.Name == 'SectionTitle' then
 				element.Visible = false
 			else
