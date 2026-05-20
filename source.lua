@@ -134,7 +134,7 @@ local settingsTable = {
 		theme = {Type = 'dropdown', Value = 'Reverb', Name = 'Theme', Options = {'Reverb'}, Order = 10},
 		uiScale = {Type = 'dropdown', Value = '100%', Name = 'UI Scale', Options = {'50%', '60%', '70%', '80%', '90%', '100%', '110%', '120%', '130%', '140%', '150%'}, Order = 20},
 		uiHeight = {Type = 'dropdown', Value = '100%', Name = 'UI Vertical Size', Options = {'50%', '60%', '70%', '80%', '90%', '100%', '110%', '120%', '130%', '140%', '150%'}, Order = 30},
-		footerText = {Type = 'toggle', Value = true, Name = 'Show Script Info', Order = 40},
+		footerText = {Type = 'toggle', Value = false, Name = 'Show Script Info', Order = 40},
 	},
 	Notifications = {
 		notificationDuration = {Type = 'dropdown', Value = 'Medium (5s)', Name = 'Notification Duration', Options = {'Short (3s)', 'Medium (5s)', 'Long (8s)'}, Order = 10},
@@ -5559,11 +5559,17 @@ for _, TopbarButton in ipairs(Topbar:GetChildren()) do
 end
 
 
-function RayfieldLibrary:LoadConfiguration()
+function RayfieldLibrary:LoadConfiguration(Options)
 	local config
+	local forceLoad = Options == true or (type(Options) == "table" and (Options.Force == true or Options.force == true))
 
 	if debugX then
 		warn('Loading Configuration')
+	end
+
+	if not forceLoad and not RayfieldLibrary:ShouldAutoLoadConfig() then
+		globalLoaded = true
+		return false
 	end
 
 	if useStudio then
@@ -5599,6 +5605,7 @@ function RayfieldLibrary:LoadConfiguration()
 	end
 
 	globalLoaded = true
+	return true
 end
 
 
@@ -5817,7 +5824,7 @@ end
 
 task.delay(4, function()
 	if RayfieldLibrary:ShouldAutoLoadConfig() then
-		RayfieldLibrary.LoadConfiguration()
+		RayfieldLibrary:LoadConfiguration({Force = true})
 	else
 		globalLoaded = true
 	end
