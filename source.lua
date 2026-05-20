@@ -2558,11 +2558,7 @@ function RayfieldLibrary:Notify(data) -- action e.g open messages
 end
 
 updateSearchPlaceholder = function()
-	if normalizeSearchScope(getSetting("Search", "searchScope")) == "Current Panel" then
-		Main.Search.Input.PlaceholderText = "Search current tab or panel"
-	else
-		Main.Search.Input.PlaceholderText = "Search all tabs and panels"
-	end
+	Main.Search.Input.PlaceholderText = "Search..."
 end
 
 local function openSearch()
