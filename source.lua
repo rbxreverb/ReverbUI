@@ -3248,6 +3248,22 @@ function RayfieldLibrary:CreateWindow(Settings)
 	local FirstTab = false
 	local Window = {}
 
+	local function jumpToWindowPage(TargetPage)
+		local CurrentPage = Elements.UIPageLayout.CurrentPage
+		if CurrentPage and CurrentPage ~= TargetPage then
+			CurrentPage.Visible = false
+			TargetPage.Visible = true
+			Elements.UIPageLayout:JumpTo(TargetPage)
+			task.delay(0.22, function()
+				if CurrentPage and CurrentPage.Parent then
+					CurrentPage.Visible = true
+				end
+			end)
+		else
+			Elements.UIPageLayout:JumpTo(TargetPage)
+		end
+	end
+
 	function Window:SetFooter(Footer)
 		setWindowFooter(Footer, true)
 	end
@@ -3366,7 +3382,7 @@ function RayfieldLibrary:CreateWindow(Settings)
 			end
 
 			if Elements.UIPageLayout.CurrentPage ~= TabPage then
-				Elements.UIPageLayout:JumpTo(TabPage)
+				jumpToWindowPage(TabPage)
 			end
 			updateTopbarPageButtons()
 		end)
