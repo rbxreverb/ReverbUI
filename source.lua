@@ -2344,9 +2344,10 @@ end
 
 function ChangelogHelpers.FormatContent(entry)
 	local parts = {}
-	local summary = ChangelogHelpers.GetValue(entry, {"Summary", "Description", "Notes"})
+	local summary = ChangelogHelpers.GetValue(entry, {"Summary", "Description", "Notes", "Content"})
 	if summary then
-		table.insert(parts, tostring(summary))
+		local formattedSummary = ChangelogHelpers.FormatList(summary)
+		table.insert(parts, formattedSummary or tostring(summary))
 	end
 
 	for _, category in ipairs(ChangelogHelpers.CategoryOrder) do
@@ -2368,6 +2369,12 @@ function ChangelogHelpers.FormatContent(entry)
 	end
 
 	return table.concat(parts, "\n\n")
+end
+
+function ChangelogHelpers.SetParagraphVisible(paragraph, visible)
+	if type(paragraph) == "table" and paragraph.SetVisible then
+		paragraph:SetVisible(visible)
+	end
 end
 
 function ChangelogHelpers.FormatTitle(entry)
@@ -3834,6 +3841,10 @@ function RayfieldLibrary:CreateWindow(Settings)
 				Paragraph.Content.Text = NewParagraphSettings.Content
 			end
 
+			function ParagraphValue:SetVisible(Visible)
+				Paragraph.Visible = Visible and true or false
+			end
+
 			Rayfield.Main:GetPropertyChangedSignal('BackgroundColor3'):Connect(function()
 				Paragraph.BackgroundColor3 = SelectedTheme.SecondaryElementBackground
 				Paragraph.UIStroke.Color = SelectedTheme.SecondaryElementStroke
@@ -4954,31 +4965,35 @@ function RayfieldLibrary:CreateWindow(Settings)
 		local entries = ChangelogHelpers.NormalizeEntries(ChangelogSettings.Entries or ChangelogSettings.Updates or ChangelogSettings.Changes or ChangelogSettings.Changelog)
 		local latestColor = ChangelogSettings.LatestColor or ReverbBrandColor
 
-		if ChangelogSettings.ScriptName or ChangelogSettings.ScriptVersion then
-			local scriptTitle = ChangelogSettings.ScriptName or ChangelogSettings.Title or "Script"
-			local scriptVersion = ChangelogSettings.ScriptVersion and (" - "..tostring(ChangelogSettings.ScriptVersion)) or ""
-			changelogTab:CreateLabel(tostring(scriptTitle)..scriptVersion, "scroll-text", latestColor, true)
-		end
-
 		if #entries > 0 then
+			changelogTab:CreateSection("Version History")
 			for index, entry in ipairs(entries) do
-				if index == 1 then
-					changelogTab:CreateSection("Latest Update")
-					changelogTab:CreateLabel("Latest - "..ChangelogHelpers.FormatTitle(entry), "sparkles", latestColor, true)
-				elseif index == 2 then
-					changelogTab:CreateSection("Previous Updates")
-					changelogTab:CreateLabel(ChangelogHelpers.FormatTitle(entry), "history", latestColor, true)
-				else
-					changelogTab:CreateLabel(ChangelogHelpers.FormatTitle(entry), "history", latestColor, true)
-				end
+				local isLatest = index == 1
+				local expanded = isLatest
+				local rowName = (isLatest and "Latest - " or "")..ChangelogHelpers.FormatTitle(entry)
+				local details
+				local toggleButton
 
-				changelogTab:CreateParagraph({
+				toggleButton = changelogTab:CreateButton({
+					Name = (expanded and "Hide " or "View ")..rowName,
+					Ext = true,
+					Callback = function()
+						expanded = not expanded
+						ChangelogHelpers.SetParagraphVisible(details, expanded)
+						if toggleButton and toggleButton.Set then
+							toggleButton:Set((expanded and "Hide " or "View ")..rowName)
+						end
+					end,
+				})
+
+				details = changelogTab:CreateParagraph({
 					Title = ChangelogHelpers.GetValue(entry, {"Subtitle", "Header"}) or "Update Notes",
 					Content = ChangelogHelpers.FormatContent(entry)
 				})
+				ChangelogHelpers.SetParagraphVisible(details, expanded)
 			end
 		else
-			changelogTab:CreateSection("Latest Update")
+			changelogTab:CreateSection("Version History")
 			changelogTab:CreateLabel("Changelog Coming Soon", "scroll-text", latestColor, true)
 			changelogTab:CreateParagraph({
 				Title = "Update Notes",
@@ -4987,8 +5002,6 @@ function RayfieldLibrary:CreateWindow(Settings)
 		end
 
 		local fullChangelogUrl = ChangelogSettings.FullChangelogUrl or ChangelogSettings.BlogUrl or AccountLinks.Blog
-		local discordUrl = ChangelogSettings.DiscordUrl or AccountLinks.Discord
-		local reportBugUrl = ChangelogSettings.ReportBugUrl or ChangelogSettings.BugReportUrl or AccountLinks.ReportBug
 
 		changelogTab:CreateSection("Links")
 		if fullChangelogUrl then
@@ -4997,28 +5010,6 @@ function RayfieldLibrary:CreateWindow(Settings)
 				Ext = true,
 				Callback = function()
 					copyLink("Full changelog", fullChangelogUrl, "Reverb Changelog", "external-link")
-				end,
-			})
-		end
-		if discordUrl then
-			changelogTab:CreateButton({
-				Name = "Join Discord",
-				Ext = true,
-				Callback = function()
-					if discordUrl == AccountLinks.Discord then
-						joinAccountDiscord("Reverb Changelog")
-					else
-						copyLink("Discord", discordUrl, "Reverb Changelog", "copy")
-					end
-				end,
-			})
-		end
-		if reportBugUrl then
-			changelogTab:CreateButton({
-				Name = "Report Bug",
-				Ext = true,
-				Callback = function()
-					copyLink("Bug report", reportBugUrl, "Reverb Changelog", "bug")
 				end,
 			})
 		end
