@@ -4964,9 +4964,22 @@ function RayfieldLibrary:CreateWindow(Settings)
 		local changelogTab = Window:CreateTab(tabName, icon)
 		local entries = ChangelogHelpers.NormalizeEntries(ChangelogSettings.Entries or ChangelogSettings.Updates or ChangelogSettings.Changes or ChangelogSettings.Changelog)
 		local latestColor = ChangelogSettings.LatestColor or ReverbBrandColor
+		local historyTitle = ChangelogSettings.HistoryTitle or ChangelogSettings.ScriptName or ChangelogSettings.GameName or ChangelogSettings.Title or "This Script"
+		local fullChangelogUrl = ChangelogSettings.FullChangelogUrl or ChangelogSettings.BlogUrl or AccountLinks.Blog
+
+		changelogTab:CreateSection("Reverb News")
+		if fullChangelogUrl then
+			changelogTab:CreateButton({
+				Name = "View All Reverb News (Updates + More)",
+				Ext = true,
+				Callback = function()
+					copyLink("Reverb news", fullChangelogUrl, "Reverb Changelog", "external-link")
+				end,
+			})
+		end
 
 		if #entries > 0 then
-			changelogTab:CreateSection("Version History")
+			changelogTab:CreateSection(tostring(historyTitle).." Version History")
 			for index, entry in ipairs(entries) do
 				local isLatest = index == 1
 				local expanded = isLatest
@@ -4993,24 +5006,11 @@ function RayfieldLibrary:CreateWindow(Settings)
 				ChangelogHelpers.SetParagraphVisible(details, expanded)
 			end
 		else
-			changelogTab:CreateSection("Version History")
+			changelogTab:CreateSection(tostring(historyTitle).." Version History")
 			changelogTab:CreateLabel("Changelog Coming Soon", "scroll-text", latestColor, true)
 			changelogTab:CreateParagraph({
 				Title = "Update Notes",
 				Content = "No changelog entries have been added for this script yet."
-			})
-		end
-
-		local fullChangelogUrl = ChangelogSettings.FullChangelogUrl or ChangelogSettings.BlogUrl or AccountLinks.Blog
-
-		changelogTab:CreateSection("Links")
-		if fullChangelogUrl then
-			changelogTab:CreateButton({
-				Name = "View Full Changelog",
-				Ext = true,
-				Callback = function()
-					copyLink("Full changelog", fullChangelogUrl, "Reverb Changelog", "external-link")
-				end,
 			})
 		end
 
