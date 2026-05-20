@@ -323,67 +323,65 @@ local RayfieldLibrary = {
 	Flags = {},
 	Theme = {
 		Default = {
-			TextColor = Color3.fromRGB(238, 248, 250),
-			TextMuted = Color3.fromRGB(140, 163, 173),
-			TextDim = Color3.fromRGB(88, 108, 120),
+			TextColor = Color3.fromRGB(241, 247, 248),
+			TextMuted = Color3.fromRGB(147, 161, 168),
+			TextDim = Color3.fromRGB(95, 108, 116),
 
 			Accent = Color3.fromRGB(0, 226, 248),
-			AccentHover = Color3.fromRGB(72, 241, 255),
-			AccentDark = Color3.fromRGB(0, 118, 130),
-			AccentSoft = Color3.fromRGB(16, 58, 68),
-			AccentGlow = Color3.fromRGB(0, 180, 220),
+			AccentHover = Color3.fromRGB(98, 243, 255),
+			AccentDark = Color3.fromRGB(0, 125, 138),
+			AccentSoft = Color3.fromRGB(11, 42, 48),
+			AccentGlow = Color3.fromRGB(0, 175, 194),
 
-			Background = Color3.fromRGB(6, 9, 13),
-			Topbar = Color3.fromRGB(9, 15, 20),
-			Shadow = Color3.fromRGB(0, 5, 8),
-			Surface = Color3.fromRGB(13, 20, 26),
-			SurfaceRaised = Color3.fromRGB(18, 29, 36),
-			SurfaceSunken = Color3.fromRGB(7, 12, 17),
-			PanelBackground = Color3.fromRGB(8, 13, 18),
-			PanelHeader = Color3.fromRGB(10, 18, 24),
-			Divider = Color3.fromRGB(28, 58, 68),
+			Background = Color3.fromRGB(6, 7, 8),
+			Topbar = Color3.fromRGB(10, 12, 15),
+			Shadow = Color3.fromRGB(0, 0, 0),
+			Surface = Color3.fromRGB(16, 18, 22),
+			SurfaceRaised = Color3.fromRGB(21, 24, 29),
+			SurfaceSunken = Color3.fromRGB(9, 11, 14),
+			PanelBackground = Color3.fromRGB(9, 11, 14),
+			PanelHeader = Color3.fromRGB(10, 12, 15),
+			Divider = Color3.fromRGB(32, 38, 46),
 
-			NotificationBackground = Color3.fromRGB(10, 17, 23),
-			NotificationActionsBackground = Color3.fromRGB(18, 32, 40),
-			NotificationStroke = Color3.fromRGB(0, 118, 130),
+			NotificationBackground = Color3.fromRGB(16, 18, 22),
+			NotificationActionsBackground = Color3.fromRGB(21, 24, 29),
+			NotificationStroke = Color3.fromRGB(37, 43, 51),
 
-			TabBackground = Color3.fromRGB(15, 26, 34),
-			TabStroke = Color3.fromRGB(31, 61, 70),
-			TabBackgroundSelected = Color3.fromRGB(0, 226, 248),
-			TabTextColor = Color3.fromRGB(198, 219, 225),
-			SelectedTabTextColor = Color3.fromRGB(4, 15, 20),
+			TabBackground = Color3.fromRGB(16, 18, 22),
+			TabStroke = Color3.fromRGB(37, 43, 51),
+			TabBackgroundSelected = Color3.fromRGB(11, 42, 48),
+			TabTextColor = Color3.fromRGB(147, 161, 168),
+			SelectedTabTextColor = Color3.fromRGB(221, 251, 255),
 
-			ElementBackground = Color3.fromRGB(13, 20, 26),
-			ElementBackgroundHover = Color3.fromRGB(20, 33, 42),
-			SecondaryElementBackground = Color3.fromRGB(8, 14, 19),
-			ElementStroke = Color3.fromRGB(30, 51, 60),
-			SecondaryElementStroke = Color3.fromRGB(21, 39, 48),
+			ElementBackground = Color3.fromRGB(16, 18, 22),
+			ElementBackgroundHover = Color3.fromRGB(26, 30, 36),
+			SecondaryElementBackground = Color3.fromRGB(9, 11, 14),
+			ElementStroke = Color3.fromRGB(37, 43, 51),
+			SecondaryElementStroke = Color3.fromRGB(28, 34, 41),
 
-			SliderBackground = Color3.fromRGB(8, 45, 54),
+			SliderBackground = Color3.fromRGB(11, 42, 48),
 			SliderProgress = Color3.fromRGB(0, 226, 248),
-			SliderStroke = Color3.fromRGB(72, 241, 255),
+			SliderStroke = Color3.fromRGB(0, 125, 138),
 
-			ToggleBackground = Color3.fromRGB(7, 13, 18),
+			ToggleBackground = Color3.fromRGB(9, 11, 14),
 			ToggleEnabled = Color3.fromRGB(0, 226, 248),
-			ToggleDisabled = Color3.fromRGB(78, 93, 102),
-			ToggleEnabledStroke = Color3.fromRGB(72, 241, 255),
-			ToggleDisabledStroke = Color3.fromRGB(105, 124, 134),
-			ToggleEnabledOuterStroke = Color3.fromRGB(0, 118, 130),
-			ToggleDisabledOuterStroke = Color3.fromRGB(48, 61, 69),
+			ToggleDisabled = Color3.fromRGB(95, 108, 116),
+			ToggleEnabledStroke = Color3.fromRGB(98, 243, 255),
+			ToggleDisabledStroke = Color3.fromRGB(147, 161, 168),
+			ToggleEnabledOuterStroke = Color3.fromRGB(0, 125, 138),
+			ToggleDisabledOuterStroke = Color3.fromRGB(37, 43, 51),
 
-			DropdownSelected = Color3.fromRGB(16, 40, 49),
-			DropdownUnselected = Color3.fromRGB(8, 14, 19),
+			DropdownSelected = Color3.fromRGB(21, 24, 29),
+			DropdownUnselected = Color3.fromRGB(9, 11, 14),
 
-			InputBackground = Color3.fromRGB(7, 12, 17),
-			InputStroke = Color3.fromRGB(31, 61, 70),
-			PlaceholderColor = Color3.fromRGB(128, 151, 160),
+			InputBackground = Color3.fromRGB(9, 11, 14),
+			InputStroke = Color3.fromRGB(37, 43, 51),
+			PlaceholderColor = Color3.fromRGB(147, 161, 168),
 
-			FooterBackground = Color3.fromRGB(7, 12, 17),
+			FooterBackground = Color3.fromRGB(9, 11, 14),
 			FooterAccent = Color3.fromRGB(0, 226, 248),
-			TopbarAccent = Color3.fromRGB(0, 118, 130),
+			TopbarAccent = Color3.fromRGB(0, 125, 138),
 			LogoGlow = Color3.fromRGB(0, 226, 248),
-			WatermarkColor = Color3.fromRGB(0, 118, 130),
-			WatermarkTransparency = 0.92,
 			TopbarIconActive = Color3.fromRGB(255, 255, 255),
 			Success = Color3.fromRGB(64, 220, 170),
 			Warning = Color3.fromRGB(245, 184, 82),
@@ -968,7 +966,6 @@ local ScrollCue = nil
 local scrollCueVisible = false
 local ThemeTopbarAccent = nil
 local ThemeLogoGlow = nil
-local ThemeWatermark = nil
 local MainUIScale = nil
 local AccountInfo = nil
 local AccountParagraph = nil
@@ -1010,11 +1007,6 @@ end
 local function themeColor(name, fallback)
 	local value = SelectedTheme and SelectedTheme[name]
 	return value or fallback
-end
-
-local function themeNumber(name, fallback)
-	local value = SelectedTheme and SelectedTheme[name]
-	return type(value) == "number" and value or fallback
 end
 
 local function normalizeSearchScope(scope)
@@ -1402,19 +1394,6 @@ local function ensureThemeDecor()
 		stroke.Parent = ThemeLogoGlow
 	end
 
-	if not ThemeWatermark then
-		ThemeWatermark = Instance.new("ImageLabel")
-		ThemeWatermark.Name = "ReverbThemeWatermark"
-		ThemeWatermark.AnchorPoint = Vector2.new(1, 1)
-		ThemeWatermark.BackgroundTransparency = 1
-		ThemeWatermark.Image = customAssets["ReverbIcon"]
-		ThemeWatermark.ImageColor3 = themeColor("WatermarkColor", ReverbBrandColor)
-		ThemeWatermark.ImageTransparency = themeNumber("WatermarkTransparency", 0.92)
-		ThemeWatermark.Position = UDim2.new(1, -16, 1, -38)
-		ThemeWatermark.Size = UDim2.new(0, 118, 0, 118)
-		ThemeWatermark.ZIndex = 1
-		ThemeWatermark.Parent = Main
-	end
 end
 
 local function applyThemeDecor()
@@ -1438,12 +1417,6 @@ local function applyThemeDecor()
 		if stroke then
 			stroke.Color = themeColor("LogoGlow", ReverbBrandColor)
 		end
-	end
-
-	if ThemeWatermark then
-		ThemeWatermark.Image = customAssets["ReverbIcon"]
-		ThemeWatermark.ImageColor3 = themeColor("WatermarkColor", themeColor("AccentDark", ReverbBrandColor))
-		ThemeWatermark.ImageTransparency = themeNumber("WatermarkTransparency", 0.92)
 	end
 
 	if dragBarCosmetic then
