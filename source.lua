@@ -131,7 +131,7 @@ local settingsTable = {
 		rayfieldOpen = {Type = 'bind', Value = 'K', Name = 'Reverb UI Keybind', Order = 10},
 	},
 	Appearance = {
-		theme = {Type = 'hidden', Value = 'Reverb', Name = 'Theme', Options = {'Reverb'}, Order = 10},
+		theme = {Type = 'dropdown', Value = 'Reverb', Name = 'Theme', Options = {'Reverb'}, Order = 10},
 		uiScale = {Type = 'dropdown', Value = '100%', Name = 'UI Scale', Options = {'50%', '60%', '70%', '80%', '90%', '100%', '110%', '120%', '130%', '140%', '150%'}, Order = 20},
 		uiHeight = {Type = 'dropdown', Value = '100%', Name = 'UI Vertical Size', Options = {'50%', '60%', '70%', '80%', '90%', '100%', '110%', '120%', '130%', '140%', '150%'}, Order = 30},
 		footerText = {Type = 'toggle', Value = true, Name = 'Show Script Info', Order = 40},
@@ -339,7 +339,7 @@ local RayfieldLibrary = {
 			Surface = Color3.fromRGB(16, 18, 22),
 			SurfaceRaised = Color3.fromRGB(21, 24, 29),
 			SurfaceSunken = Color3.fromRGB(9, 11, 14),
-			PanelBackground = Color3.fromRGB(9, 11, 14),
+			PanelBackground = Color3.fromRGB(10, 12, 15),
 			PanelHeader = Color3.fromRGB(10, 12, 15),
 			Divider = Color3.fromRGB(32, 38, 46),
 
@@ -378,9 +378,8 @@ local RayfieldLibrary = {
 			InputStroke = Color3.fromRGB(37, 43, 51),
 			PlaceholderColor = Color3.fromRGB(147, 161, 168),
 
-			FooterBackground = Color3.fromRGB(9, 11, 14),
+			FooterBackground = Color3.fromRGB(10, 12, 15),
 			FooterAccent = Color3.fromRGB(0, 226, 248),
-			TopbarAccent = Color3.fromRGB(0, 125, 138),
 			LogoGlow = Color3.fromRGB(0, 226, 248),
 			TopbarIconActive = Color3.fromRGB(255, 255, 255),
 			Success = Color3.fromRGB(64, 220, 170),
@@ -964,7 +963,6 @@ local FooterSpacerName = "ReverbFooterSpacer"
 local footerReady = false
 local ScrollCue = nil
 local scrollCueVisible = false
-local ThemeTopbarAccent = nil
 local ThemeLogoGlow = nil
 local MainUIScale = nil
 local AccountInfo = nil
@@ -1347,29 +1345,6 @@ local function getNotificationDuration(explicitDuration, calculatedDuration)
 end
 
 local function ensureThemeDecor()
-	if not ThemeTopbarAccent then
-		local divider = Topbar:FindFirstChild("Divider")
-		ThemeTopbarAccent = Instance.new("Frame")
-		ThemeTopbarAccent.Name = "ReverbTopbarAccent"
-		ThemeTopbarAccent.BackgroundColor3 = themeColor("TopbarAccent", ReverbBrandColor)
-		ThemeTopbarAccent.BorderSizePixel = 0
-		ThemeTopbarAccent.Position = UDim2.new(0, 14, 1, -1)
-		ThemeTopbarAccent.Size = UDim2.new(1, -28, 0, 1)
-		ThemeTopbarAccent.ZIndex = ((divider and divider.ZIndex) or Topbar.ZIndex) + 1
-		ThemeTopbarAccent.Parent = Topbar
-
-		local gradient = Instance.new("UIGradient")
-		gradient.Name = "SignalGradient"
-		gradient.Transparency = NumberSequence.new({
-			NumberSequenceKeypoint.new(0, 1),
-			NumberSequenceKeypoint.new(0.18, 0.4),
-			NumberSequenceKeypoint.new(0.5, 0),
-			NumberSequenceKeypoint.new(0.82, 0.4),
-			NumberSequenceKeypoint.new(1, 1),
-		})
-		gradient.Parent = ThemeTopbarAccent
-	end
-
 	if not ThemeLogoGlow and Topbar:FindFirstChild("Icon") then
 		ThemeLogoGlow = Instance.new("Frame")
 		ThemeLogoGlow.Name = "ReverbLogoGlow"
@@ -1393,23 +1368,10 @@ local function ensureThemeDecor()
 		stroke.Thickness = 1
 		stroke.Parent = ThemeLogoGlow
 	end
-
 end
 
 local function applyThemeDecor()
 	ensureThemeDecor()
-
-	if ThemeTopbarAccent then
-		ThemeTopbarAccent.BackgroundColor3 = themeColor("TopbarAccent", themeColor("AccentDark", ReverbBrandColor))
-		local gradient = ThemeTopbarAccent:FindFirstChild("SignalGradient")
-		if gradient then
-			gradient.Color = ColorSequence.new({
-				ColorSequenceKeypoint.new(0, themeColor("AccentDark", ReverbBrandColor)),
-				ColorSequenceKeypoint.new(0.5, themeColor("AccentHover", ReverbBrandColor)),
-				ColorSequenceKeypoint.new(1, themeColor("AccentDark", ReverbBrandColor)),
-			})
-		end
-	end
 
 	if ThemeLogoGlow then
 		ThemeLogoGlow.BackgroundColor3 = themeColor("AccentSoft", themeColor("AccentDark", ReverbBrandColor))
@@ -1464,8 +1426,8 @@ local function ChangeTheme(Theme)
 	end
 	if Topbar:FindFirstChild('Settings') then
 		Rayfield.Main.Topbar.Settings.ImageColor3 = SelectedTheme.TextColor
-		Rayfield.Main.Topbar.Divider.BackgroundColor3 = themeColor("Divider", SelectedTheme.ElementStroke)
 	end
+	Rayfield.Main.Topbar.Divider.BackgroundColor3 = themeColor("Divider", SelectedTheme.ElementStroke)
 	updateTopbarPageButtons()
 
 	Main.Search.BackgroundColor3 = themeColor("SurfaceSunken", SelectedTheme.SecondaryElementBackground)
@@ -1501,7 +1463,7 @@ local function ChangeTheme(Theme)
 		FooterCornerRepair.BackgroundColor3 = themeColor("FooterBackground", SelectedTheme.Topbar)
 	end
 	if FooterDivider then
-		FooterDivider.BackgroundColor3 = themeColor("FooterAccent", themeColor("Accent", ReverbBrandColor))
+		FooterDivider.BackgroundColor3 = themeColor("Divider", SelectedTheme.ElementStroke)
 	end
 	if FooterLabel then
 		FooterLabel.TextColor3 = themeColor("FooterAccent", themeColor("Accent", ReverbBrandColor))
@@ -1608,7 +1570,7 @@ local function ensureFooterLabel()
 
 	FooterDivider = Instance.new("Frame")
 	FooterDivider.Name = "Divider"
-	FooterDivider.BackgroundColor3 = themeColor("FooterAccent", themeColor("Accent", ReverbBrandColor))
+	FooterDivider.BackgroundColor3 = themeColor("Divider", SelectedTheme.ElementStroke)
 	FooterDivider.BackgroundTransparency = 1
 	FooterDivider.BorderSizePixel = 0
 	FooterDivider.Position = UDim2.new(0, 0, 0, 0)
