@@ -2279,7 +2279,9 @@ local function normalizeConfigPresets(presets)
 	return presetNames, presetMap
 end
 
-local changelogCategoryOrder = {
+local ChangelogHelpers = {}
+
+ChangelogHelpers.CategoryOrder = {
 	{Key = "Added", Aliases = {"Added", "Additions", "New"}, Title = "Added"},
 	{Key = "Changed", Aliases = {"Changed", "Changes", "Improved", "Improvements"}, Title = "Changed"},
 	{Key = "Fixed", Aliases = {"Fixed", "Fixes"}, Title = "Fixed"},
@@ -2287,7 +2289,7 @@ local changelogCategoryOrder = {
 	{Key = "Removed", Aliases = {"Removed", "Removals"}, Title = "Removed"},
 }
 
-local function normalizeChangelogEntries(entries)
+function ChangelogHelpers.NormalizeEntries(entries)
 	if type(entries) ~= "table" then
 		return {}
 	end
@@ -2299,7 +2301,7 @@ local function normalizeChangelogEntries(entries)
 	return entries
 end
 
-local function getChangelogValue(entry, keys)
+function ChangelogHelpers.GetValue(entry, keys)
 	if type(entry) ~= "table" then
 		return nil
 	end
@@ -2314,7 +2316,7 @@ local function getChangelogValue(entry, keys)
 	return nil
 end
 
-local function formatChangelogList(value)
+function ChangelogHelpers.FormatList(value)
 	if value == nil then
 		return nil
 	end
@@ -2338,23 +2340,23 @@ local function formatChangelogList(value)
 	return #lines > 0 and table.concat(lines, "\n") or nil
 end
 
-local function formatChangelogContent(entry)
+function ChangelogHelpers.FormatContent(entry)
 	local parts = {}
-	local summary = getChangelogValue(entry, {"Summary", "Description", "Notes"})
+	local summary = ChangelogHelpers.GetValue(entry, {"Summary", "Description", "Notes"})
 	if summary then
 		table.insert(parts, tostring(summary))
 	end
 
-	for _, category in ipairs(changelogCategoryOrder) do
-		local value = getChangelogValue(entry, category.Aliases)
-		local formatted = formatChangelogList(value)
+	for _, category in ipairs(ChangelogHelpers.CategoryOrder) do
+		local value = ChangelogHelpers.GetValue(entry, category.Aliases)
+		local formatted = ChangelogHelpers.FormatList(value)
 		if formatted then
 			table.insert(parts, category.Title.."\n"..formatted)
 		end
 	end
 
-	local extraChanges = getChangelogValue(entry, {"Items", "Bullets"})
-	local formattedExtra = formatChangelogList(extraChanges)
+	local extraChanges = ChangelogHelpers.GetValue(entry, {"Items", "Bullets"})
+	local formattedExtra = ChangelogHelpers.FormatList(extraChanges)
 	if formattedExtra then
 		table.insert(parts, "Changes\n"..formattedExtra)
 	end
@@ -2366,9 +2368,9 @@ local function formatChangelogContent(entry)
 	return table.concat(parts, "\n\n")
 end
 
-local function formatChangelogTitle(entry)
-	local version = getChangelogValue(entry, {"Version", "Name", "Title"}) or "Update"
-	local date = getChangelogValue(entry, {"Date", "Released", "ReleaseDate"})
+function ChangelogHelpers.FormatTitle(entry)
+	local version = ChangelogHelpers.GetValue(entry, {"Version", "Name", "Title"}) or "Update"
+	local date = ChangelogHelpers.GetValue(entry, {"Date", "Released", "ReleaseDate"})
 
 	if date and tostring(date) ~= "" then
 		return tostring(version).." - "..tostring(date)
@@ -4947,7 +4949,7 @@ function RayfieldLibrary:CreateWindow(Settings)
 		if icon == nil then icon = "history" end
 
 		local changelogTab = Window:CreateTab(tabName, icon)
-		local entries = normalizeChangelogEntries(ChangelogSettings.Entries or ChangelogSettings.Updates or ChangelogSettings.Changes or ChangelogSettings.Changelog)
+		local entries = ChangelogHelpers.NormalizeEntries(ChangelogSettings.Entries or ChangelogSettings.Updates or ChangelogSettings.Changes or ChangelogSettings.Changelog)
 		local latestColor = ChangelogSettings.LatestColor or ReverbBrandColor
 
 		if ChangelogSettings.ScriptName or ChangelogSettings.ScriptVersion then
@@ -4960,17 +4962,17 @@ function RayfieldLibrary:CreateWindow(Settings)
 			for index, entry in ipairs(entries) do
 				if index == 1 then
 					changelogTab:CreateSection("Latest Update")
-					changelogTab:CreateLabel("Latest - "..formatChangelogTitle(entry), "sparkles", latestColor, true)
+					changelogTab:CreateLabel("Latest - "..ChangelogHelpers.FormatTitle(entry), "sparkles", latestColor, true)
 				elseif index == 2 then
 					changelogTab:CreateSection("Previous Updates")
-					changelogTab:CreateLabel(formatChangelogTitle(entry), "history", latestColor, true)
+					changelogTab:CreateLabel(ChangelogHelpers.FormatTitle(entry), "history", latestColor, true)
 				else
-					changelogTab:CreateLabel(formatChangelogTitle(entry), "history", latestColor, true)
+					changelogTab:CreateLabel(ChangelogHelpers.FormatTitle(entry), "history", latestColor, true)
 				end
 
 				changelogTab:CreateParagraph({
-					Title = getChangelogValue(entry, {"Subtitle", "Header"}) or "Update Notes",
-					Content = formatChangelogContent(entry)
+					Title = ChangelogHelpers.GetValue(entry, {"Subtitle", "Header"}) or "Update Notes",
+					Content = ChangelogHelpers.FormatContent(entry)
 				})
 			end
 		else
