@@ -381,7 +381,8 @@ local RayfieldLibrary = {
 			FooterBackground = Color3.fromRGB(10, 12, 15),
 			FooterAccent = Color3.fromRGB(0, 226, 248),
 			LogoGlow = Color3.fromRGB(0, 226, 248),
-			TopbarIconActive = Color3.fromRGB(255, 255, 255),
+			TopbarIconActive = Color3.fromRGB(0, 226, 248),
+			SectionText = Color3.fromRGB(0, 175, 194),
 			Success = Color3.fromRGB(64, 220, 170),
 			Warning = Color3.fromRGB(245, 184, 82),
 			Danger = Color3.fromRGB(255, 92, 122),
@@ -1449,7 +1450,9 @@ local function ChangeTheme(Theme)
 
 	for _, TabPage in ipairs(Elements:GetChildren()) do
 		for _, Element in ipairs(TabPage:GetChildren()) do
-			if Element.ClassName == "Frame" and Element.Name ~= "Placeholder" and Element.Name ~= "SectionSpacing" and Element.Name ~= FooterSpacerName and Element.Name ~= "Divider" and Element.Name ~= "SectionTitle" and Element.Name ~= "SearchTitle-fsefsefesfsefesfesfThanks" then
+			if (Element.Name == "SectionTitle" or Element.Name == "SearchTitle-fsefsefesfsefesfesfThanks") and Element:FindFirstChild("Title") then
+				Element.Title.TextColor3 = themeColor("SectionText", themeColor("AccentGlow", SelectedTheme.TextColor))
+			elseif Element.ClassName == "Frame" and Element.Name ~= "Placeholder" and Element.Name ~= "SectionSpacing" and Element.Name ~= FooterSpacerName and Element.Name ~= "Divider" then
 				Element.BackgroundColor3 = SelectedTheme.ElementBackground
 				Element.UIStroke.Color = SelectedTheme.ElementStroke
 			end
@@ -3830,6 +3833,7 @@ function RayfieldLibrary:CreateWindow(Settings)
 
 			local Section = Elements.Template.SectionTitle:Clone()
 			Section.Title.Text = SectionName
+			Section.Title.TextColor3 = themeColor("SectionText", themeColor("AccentGlow", SelectedTheme.TextColor))
 			Section.Visible = true
 			Section.Parent = TabPage
 
@@ -5328,6 +5332,7 @@ local function setSearchTitle(page, text)
 	end
 
 	searchTitle.Title.Text = text
+	searchTitle.Title.TextColor3 = themeColor("SectionText", themeColor("AccentGlow", SelectedTheme.TextColor))
 end
 
 local function resetSearchPage(page)
