@@ -3232,10 +3232,16 @@ function RayfieldLibrary:CreateWindow(Settings)
 	Elements.Template.LayoutOrder = 100000
 	Elements.Template.Visible = false
 
+	Elements.ClipsDescendants = true
 	Elements.UIPageLayout.FillDirection = Enum.FillDirection.Horizontal
 	Elements.UIPageLayout.ScrollWheelInputEnabled = false
 	Elements.UIPageLayout.GamepadInputEnabled = false
 	Elements.UIPageLayout.TouchInputEnabled = false
+	pcall(function()
+		Elements.UIPageLayout.TweenTime = 0.18
+		Elements.UIPageLayout.EasingStyle = Enum.EasingStyle.Exponential
+		Elements.UIPageLayout.EasingDirection = Enum.EasingDirection.Out
+	end)
 	TabList.Template.Visible = false
 
 	-- Tab
@@ -3285,6 +3291,7 @@ function RayfieldLibrary:CreateWindow(Settings)
 		local TabPage = Elements.Template:Clone()
 		TabPage.Name = Name
 		TabPage.Visible = true
+		TabPage.ClipsDescendants = true
 
 		TabPage.LayoutOrder = Ext and 10000 or #Elements:GetChildren()
 
