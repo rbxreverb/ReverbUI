@@ -932,6 +932,8 @@ local StatsOverlay = nil
 local StatsOverlayText = nil
 local StatsParagraph = nil
 local FooterBar = nil
+local FooterCornerRepair = nil
+local FooterDivider = nil
 local FooterLabel = nil
 local FooterText = nil
 local FooterSpacerName = "ReverbFooterSpacer"
@@ -1259,7 +1261,9 @@ end
 
 local function positionDragBar()
 	if dragBar then
-		dragBar.Position = UDim2.new(0.5, 0, 0.5, useMobileSizing and getDragOffsetMobile() or getDragOffset())
+		local offset = useMobileSizing and getDragOffsetMobile() or getDragOffset()
+		local position = Main.Position
+		dragBar.Position = UDim2.new(position.X.Scale, position.X.Offset, position.Y.Scale, position.Y.Offset + offset)
 	end
 end
 
@@ -1380,11 +1384,13 @@ local function ChangeTheme(Theme)
 	end
 
 	if FooterBar then
-		FooterBar.BackgroundColor3 = SelectedTheme.ElementBackground
-		local stroke = FooterBar:FindFirstChildWhichIsA("UIStroke")
-		if stroke then
-			stroke.Color = SelectedTheme.ElementStroke
-		end
+		FooterBar.BackgroundColor3 = SelectedTheme.Topbar
+	end
+	if FooterCornerRepair then
+		FooterCornerRepair.BackgroundColor3 = SelectedTheme.Topbar
+	end
+	if FooterDivider then
+		FooterDivider.BackgroundColor3 = SelectedTheme.ElementStroke
 	end
 	if FooterLabel then
 		FooterLabel.TextColor3 = ReverbBrandColor
@@ -1467,31 +1473,45 @@ local function ensureFooterLabel()
 	FooterBar = Instance.new("Frame")
 	FooterBar.Name = "ReverbFooterBar"
 	FooterBar.AnchorPoint = Vector2.new(0.5, 1)
-	FooterBar.BackgroundColor3 = SelectedTheme.ElementBackground
+	FooterBar.BackgroundColor3 = SelectedTheme.Topbar
 	FooterBar.BackgroundTransparency = 1
 	FooterBar.ClipsDescendants = true
-	FooterBar.Position = UDim2.new(0.5, 0, 1, -7)
-	FooterBar.Size = UDim2.new(1, -36, 0, 24)
+	FooterBar.Position = UDim2.new(0.5, 0, 1, 0)
+	FooterBar.Size = UDim2.new(1, 0, 0, 28)
 	FooterBar.ZIndex = 49
 	FooterBar.Parent = Main
 
 	local corner = Instance.new("UICorner")
-	corner.CornerRadius = UDim.new(0, 6)
+	corner.CornerRadius = UDim.new(0, 8)
 	corner.Parent = FooterBar
 
-	local stroke = Instance.new("UIStroke")
-	stroke.Color = SelectedTheme.ElementStroke
-	stroke.Transparency = 1
-	stroke.Thickness = 1
-	stroke.Parent = FooterBar
+	FooterCornerRepair = Instance.new("Frame")
+	FooterCornerRepair.Name = "CornerRepair"
+	FooterCornerRepair.BackgroundColor3 = SelectedTheme.Topbar
+	FooterCornerRepair.BackgroundTransparency = 0
+	FooterCornerRepair.BorderSizePixel = 0
+	FooterCornerRepair.Position = UDim2.new(0, 0, 0, 0)
+	FooterCornerRepair.Size = UDim2.new(1, 0, 0, 8)
+	FooterCornerRepair.ZIndex = 50
+	FooterCornerRepair.Parent = FooterBar
+
+	FooterDivider = Instance.new("Frame")
+	FooterDivider.Name = "Divider"
+	FooterDivider.BackgroundColor3 = SelectedTheme.ElementStroke
+	FooterDivider.BackgroundTransparency = 1
+	FooterDivider.BorderSizePixel = 0
+	FooterDivider.Position = UDim2.new(0, 0, 0, 0)
+	FooterDivider.Size = UDim2.new(1, 0, 0, 1)
+	FooterDivider.ZIndex = 51
+	FooterDivider.Parent = FooterBar
 
 	FooterLabel = Instance.new("TextLabel")
 	FooterLabel.Name = "ReverbFooter"
 	FooterLabel.AnchorPoint = Vector2.new(0.5, 0.5)
 	FooterLabel.BackgroundTransparency = 1
 	FooterLabel.Font = Enum.Font.GothamMedium
-	FooterLabel.Position = UDim2.new(0.5, 0, 0.5, 0)
-	FooterLabel.Size = UDim2.new(1, -18, 1, 0)
+	FooterLabel.Position = UDim2.new(0.5, 0, 0.5, 1)
+	FooterLabel.Size = UDim2.new(1, -48, 1, -4)
 	FooterLabel.Text = ""
 	FooterLabel.TextColor3 = ReverbBrandColor
 	FooterLabel.TextSize = 12
@@ -1499,7 +1519,7 @@ local function ensureFooterLabel()
 	FooterLabel.TextTruncate = Enum.TextTruncate.AtEnd
 	FooterLabel.TextXAlignment = Enum.TextXAlignment.Center
 	FooterLabel.TextYAlignment = Enum.TextYAlignment.Center
-	FooterLabel.ZIndex = 50
+	FooterLabel.ZIndex = 52
 	FooterLabel.Parent = FooterBar
 
 	return FooterLabel
@@ -1512,8 +1532,8 @@ refreshFooterVisibility = function(animate)
 
 	local shouldShow = footerReady and footerHasContent() and not Hidden and not Minimised
 	local targetTextTransparency = shouldShow and 0.08 or 1
-	local targetBackgroundTransparency = shouldShow and 0.12 or 1
-	local targetStrokeTransparency = shouldShow and 0.72 or 1
+	local targetBackgroundTransparency = shouldShow and 0 or 1
+	local targetDividerTransparency = shouldShow and 0 or 1
 	if FooterBar then
 		FooterBar.Visible = true
 	end
@@ -1521,19 +1541,23 @@ refreshFooterVisibility = function(animate)
 	if animate then
 		if FooterBar then
 			TweenService:Create(FooterBar, getTweenInfo(0.3, Enum.EasingStyle.Exponential), {BackgroundTransparency = targetBackgroundTransparency}):Play()
-			local stroke = FooterBar:FindFirstChildWhichIsA("UIStroke")
-			if stroke then
-				TweenService:Create(stroke, getTweenInfo(0.3, Enum.EasingStyle.Exponential), {Transparency = targetStrokeTransparency}):Play()
-			end
+		end
+		if FooterCornerRepair then
+			TweenService:Create(FooterCornerRepair, getTweenInfo(0.3, Enum.EasingStyle.Exponential), {BackgroundTransparency = targetBackgroundTransparency}):Play()
+		end
+		if FooterDivider then
+			TweenService:Create(FooterDivider, getTweenInfo(0.3, Enum.EasingStyle.Exponential), {BackgroundTransparency = targetDividerTransparency}):Play()
 		end
 		TweenService:Create(FooterLabel, getTweenInfo(0.3, Enum.EasingStyle.Exponential), {TextTransparency = targetTextTransparency}):Play()
 	else
 		if FooterBar then
 			FooterBar.BackgroundTransparency = targetBackgroundTransparency
-			local stroke = FooterBar:FindFirstChildWhichIsA("UIStroke")
-			if stroke then
-				stroke.Transparency = targetStrokeTransparency
-			end
+		end
+		if FooterCornerRepair then
+			FooterCornerRepair.BackgroundTransparency = targetBackgroundTransparency
+		end
+		if FooterDivider then
+			FooterDivider.BackgroundTransparency = targetDividerTransparency
 		end
 		FooterLabel.TextTransparency = targetTextTransparency
 	end
@@ -1767,7 +1791,7 @@ end
 
 updateFooterSpacers = function()
 	local footerActive = footerHasContent()
-	local spacerHeight = footerActive and 30 or 0
+	local spacerHeight = footerActive and 34 or 0
 
 	for _, page in ipairs(Elements:GetChildren()) do
 		if page.ClassName == "ScrollingFrame" and page.Name ~= "Template" and page.Name ~= "Placeholder" then
@@ -1792,7 +1816,7 @@ updateScrollCueLayout = function()
 		return
 	end
 
-	ScrollCue.Position = UDim2.new(1, -24, 1, footerHasContent() and -39 or -13)
+	ScrollCue.Position = UDim2.new(1, -24, 1, footerHasContent() and -43 or -13)
 end
 
 local function ensureScrollCue()
