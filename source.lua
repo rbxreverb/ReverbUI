@@ -379,7 +379,7 @@ local RayfieldLibrary = {
 			PlaceholderColor = Color3.fromRGB(147, 161, 168),
 
 			FooterBackground = Color3.fromRGB(10, 12, 15),
-			FooterAccent = Color3.fromRGB(0, 226, 248),
+			FooterAccent = Color3.fromRGB(0, 175, 194),
 			LogoGlow = Color3.fromRGB(0, 226, 248),
 			TopbarIconActive = Color3.fromRGB(0, 226, 248),
 			SectionText = Color3.fromRGB(0, 175, 194),
