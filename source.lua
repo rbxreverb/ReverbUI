@@ -3248,20 +3248,42 @@ function RayfieldLibrary:CreateWindow(Settings)
 	local FirstTab = false
 	local Window = {}
 
-	local function jumpToWindowPage(TargetPage)
-		local CurrentPage = Elements.UIPageLayout.CurrentPage
-		if CurrentPage and CurrentPage ~= TargetPage then
-			CurrentPage.Visible = false
-			TargetPage.Visible = true
-			Elements.UIPageLayout:JumpTo(TargetPage)
-			task.delay(0.22, function()
-				if CurrentPage and CurrentPage.Parent then
-					CurrentPage.Visible = true
-				end
-			end)
-		else
-			Elements.UIPageLayout:JumpTo(TargetPage)
+	local function setTransitionSlidersVisible(Page, Visible)
+		if not Page or Page.ClassName ~= "ScrollingFrame" then
+			return
 		end
+
+		for _, Element in ipairs(Page:GetChildren()) do
+			if Element:GetAttribute("ReverbElementType") == "Slider" then
+				if Visible then
+					local previousVisible = Element:GetAttribute("ReverbTransitionVisible")
+					if previousVisible ~= nil then
+						Element.Visible = previousVisible
+						Element:SetAttribute("ReverbTransitionVisible", nil)
+					end
+				else
+					if Element:GetAttribute("ReverbTransitionVisible") == nil then
+						Element:SetAttribute("ReverbTransitionVisible", Element.Visible)
+					end
+					Element.Visible = false
+				end
+			end
+		end
+	end
+
+	local function jumpToWindowPage(TargetPage)
+		for _, Page in ipairs(Elements:GetChildren()) do
+			if Page ~= TargetPage then
+				setTransitionSlidersVisible(Page, false)
+			end
+		end
+		TargetPage.Visible = true
+		Elements.UIPageLayout:JumpTo(TargetPage)
+		task.delay(0.22, function()
+			for _, Page in ipairs(Elements:GetChildren()) do
+				setTransitionSlidersVisible(Page, true)
+			end
+		end)
 	end
 
 	function Window:SetFooter(Footer)
@@ -4616,6 +4638,7 @@ function RayfieldLibrary:CreateWindow(Settings)
 			local SLDragging = false
 			local Slider = Elements.Template.Slider:Clone()
 			Slider.Name = SliderSettings.Name
+			Slider:SetAttribute("ReverbElementType", "Slider")
 			Slider.Title.Text = SliderSettings.Name
 			Slider.Visible = true
 			Slider.Parent = TabPage
