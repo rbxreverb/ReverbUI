@@ -2022,15 +2022,17 @@ local function makeDraggable(object, dragObject, enableTaptic, tapticOffset)
 end
 
 
-local function PackColor(Color)
+local ConfigHelpers = {}
+
+function ConfigHelpers.PackColor(Color)
 	return {R = Color.R * 255, G = Color.G * 255, B = Color.B * 255}
 end    
 
-local function UnpackColor(Color)
+function ConfigHelpers.UnpackColor(Color)
 	return Color3.fromRGB(Color.R, Color.G, Color.B)
 end
 
-local function LoadConfiguration(Configuration, suppressMissingWarnings)
+function ConfigHelpers.Load(Configuration, suppressMissingWarnings)
 	local success, Data = pcall(function() return HttpService:JSONDecode(Configuration) end)
 	local changed
 
@@ -2044,7 +2046,7 @@ local function LoadConfiguration(Configuration, suppressMissingWarnings)
 			task.spawn(function()
 				if Flag.Type == "ColorPicker" then
 					changed = true
-					Flag:Set(UnpackColor(FlagValue))
+					Flag:Set(ConfigHelpers.UnpackColor(FlagValue))
 				else
 					if (Flag.CurrentValue or Flag.CurrentKeybind or Flag.CurrentOption or Flag.Color) ~= FlagValue then 
 						changed = true
@@ -2062,11 +2064,11 @@ local function LoadConfiguration(Configuration, suppressMissingWarnings)
 	return changed
 end
 
-local function collectConfigurationData()
+function ConfigHelpers.CollectData()
 	local Data = {}
 	for i, v in pairs(RayfieldLibrary.Flags) do
 		if v.Type == "ColorPicker" then
-			Data[i] = PackColor(v.Color)
+			Data[i] = ConfigHelpers.PackColor(v.Color)
 		else
 			if typeof(v.CurrentValue) == 'boolean' then
 				if v.CurrentValue == false then
@@ -2083,14 +2085,14 @@ local function collectConfigurationData()
 	return Data
 end
 
-local function SaveConfiguration()
+function ConfigHelpers.Save()
 	if not CEnabled or not globalLoaded then return end
 
 	if debugX then
 		print('Saving')
 	end
 
-	local Data = collectConfigurationData()
+	local Data = ConfigHelpers.CollectData()
 
 	if useStudio then
 		if script.Parent:FindFirstChild('configuration') then script.Parent.configuration:Destroy() end
@@ -2116,7 +2118,7 @@ local function SaveConfiguration()
 	callSafely(writefile, ConfigurationFolder .. "/" .. CFileName .. ConfigurationExtension, tostring(HttpService:JSONEncode(Data)))
 end
 
-local function normalizeConfigName(name)
+function ConfigHelpers.NormalizeName(name)
 	name = string.match(tostring(name or ""), "^%s*(.-)%s*$")
 	if name == "" or name == "." or name == ".." then
 		return nil
@@ -2125,8 +2127,8 @@ local function normalizeConfigName(name)
 	return name
 end
 
-local function sanitizeConfigFileName(name)
-	name = normalizeConfigName(name) or "Config"
+function ConfigHelpers.SanitizeFileName(name)
+	name = ConfigHelpers.NormalizeName(name) or "Config"
 	name = string.gsub(name, "[<>:\"/\\|%?%*]", "-")
 	name = string.gsub(name, "%s+", " ")
 	name = string.match(name, "^%s*(.-)%s*$")
@@ -2137,22 +2139,22 @@ local function sanitizeConfigFileName(name)
 	return name
 end
 
-local function getNamedConfigFolder()
-	return ConfigurationFolder .. "/" .. sanitizeConfigFileName(CFileName or "Script") .. " Configs"
+function ConfigHelpers.GetNamedFolder()
+	return ConfigurationFolder .. "/" .. ConfigHelpers.SanitizeFileName(CFileName or "Script") .. " Configs"
 end
 
-local function getNamedConfigIndexPath()
-	return getNamedConfigFolder() .. "/_index" .. ConfigurationExtension
+function ConfigHelpers.GetNamedIndexPath()
+	return ConfigHelpers.GetNamedFolder() .. "/_index" .. ConfigurationExtension
 end
 
-local function getNamedConfigPath(name)
-	return getNamedConfigFolder() .. "/" .. sanitizeConfigFileName(name) .. ConfigurationExtension
+function ConfigHelpers.GetNamedPath(name)
+	return ConfigHelpers.GetNamedFolder() .. "/" .. ConfigHelpers.SanitizeFileName(name) .. ConfigurationExtension
 end
 
-local function readNamedConfigIndex()
+function ConfigHelpers.ReadNamedIndex()
 	local names = {}
 	local seen = {}
-	local indexPath = getNamedConfigIndexPath()
+	local indexPath = ConfigHelpers.GetNamedIndexPath()
 
 	if isfile and callSafely(isfile, indexPath) then
 		local file = callSafely(readfile, indexPath)
@@ -2162,7 +2164,7 @@ local function readNamedConfigIndex()
 
 		if success and type(decoded) == "table" then
 			for _, name in ipairs(decoded) do
-				local normalized = normalizeConfigName(name)
+				local normalized = ConfigHelpers.NormalizeName(name)
 				if normalized and not seen[normalized] then
 					seen[normalized] = true
 					table.insert(names, normalized)
@@ -2175,27 +2177,27 @@ local function readNamedConfigIndex()
 	return names
 end
 
-local function writeNamedConfigIndex(names)
-	ensureFolder(getNamedConfigFolder())
-	callSafely(writefile, getNamedConfigIndexPath(), HttpService:JSONEncode(names))
+function ConfigHelpers.WriteNamedIndex(names)
+	ensureFolder(ConfigHelpers.GetNamedFolder())
+	callSafely(writefile, ConfigHelpers.GetNamedIndexPath(), HttpService:JSONEncode(names))
 end
 
-local function addNamedConfigToIndex(name)
-	name = normalizeConfigName(name)
+function ConfigHelpers.AddNamedToIndex(name)
+	name = ConfigHelpers.NormalizeName(name)
 	if not name then return {} end
 
-	local names = readNamedConfigIndex()
+	local names = ConfigHelpers.ReadNamedIndex()
 	if not table.find(names, name) then
 		table.insert(names, name)
 		table.sort(names)
-		writeNamedConfigIndex(names)
+		ConfigHelpers.WriteNamedIndex(names)
 	end
 
 	return names
 end
 
-local function saveNamedConfiguration(name)
-	name = normalizeConfigName(name)
+function ConfigHelpers.SaveNamed(name)
+	name = ConfigHelpers.NormalizeName(name)
 	if not name then
 		return false, "Enter a config name first."
 	end
@@ -2207,24 +2209,24 @@ local function saveNamedConfiguration(name)
 	end
 
 	ensureFolder(ConfigurationFolder)
-	ensureFolder(getNamedConfigFolder())
-	callSafely(writefile, getNamedConfigPath(name), HttpService:JSONEncode(collectConfigurationData()))
-	addNamedConfigToIndex(name)
+	ensureFolder(ConfigHelpers.GetNamedFolder())
+	callSafely(writefile, ConfigHelpers.GetNamedPath(name), HttpService:JSONEncode(ConfigHelpers.CollectData()))
+	ConfigHelpers.AddNamedToIndex(name)
 	return true
 end
 
-local function loadConfigurationValue(value, suppressMissingWarnings)
+function ConfigHelpers.LoadValue(value, suppressMissingWarnings)
 	if type(value) == "table" then
-		return LoadConfiguration(HttpService:JSONEncode(value), suppressMissingWarnings)
+		return ConfigHelpers.Load(HttpService:JSONEncode(value), suppressMissingWarnings)
 	elseif type(value) == "string" and value ~= "" then
-		return LoadConfiguration(value, suppressMissingWarnings)
+		return ConfigHelpers.Load(value, suppressMissingWarnings)
 	end
 
 	return false
 end
 
-local function loadNamedConfiguration(name)
-	name = normalizeConfigName(name)
+function ConfigHelpers.LoadNamed(name)
+	name = ConfigHelpers.NormalizeName(name)
 	if not name then
 		return false, "Select a saved config first."
 	end
@@ -2235,17 +2237,17 @@ local function loadNamedConfiguration(name)
 		return false, "Your executor does not support loading saved configs."
 	end
 
-	local path = getNamedConfigPath(name)
+	local path = ConfigHelpers.GetNamedPath(name)
 	if not callSafely(isfile, path) then
 		return false, "That saved config file was not found."
 	end
 
 	local file = callSafely(readfile, path)
-	local changed = loadConfigurationValue(file)
+	local changed = ConfigHelpers.LoadValue(file)
 	return true, changed
 end
 
-local function normalizeConfigPresets(presets)
+function ConfigHelpers.NormalizePresets(presets)
 	local presetNames = {}
 	local presetMap = {}
 
@@ -2268,7 +2270,7 @@ local function normalizeConfigPresets(presets)
 			name = preset.Name or preset.Title
 		end
 
-		name = normalizeConfigName(name)
+		name = ConfigHelpers.NormalizeName(name)
 		if name and not presetMap[name] then
 			presetMap[name] = value
 			table.insert(presetNames, name)
@@ -3396,7 +3398,7 @@ function RayfieldLibrary:CreateWindow(Settings)
 					TweenService:Create(Button.UIStroke, TweenInfo.new(0.6, Enum.EasingStyle.Exponential), {Transparency = 0}):Play()
 				else
 					if not ButtonSettings.Ext then
-						SaveConfiguration(ButtonSettings.Name..'\n')
+						ConfigHelpers.Save(ButtonSettings.Name..'\n')
 					end
 					TweenService:Create(Button, TweenInfo.new(0.6, Enum.EasingStyle.Exponential), {BackgroundColor3 = SelectedTheme.ElementBackgroundHover}):Play()
 					TweenService:Create(Button.ElementIndicator, TweenInfo.new(0.6, Enum.EasingStyle.Exponential), {TextTransparency = 1}):Play()
@@ -3562,7 +3564,7 @@ function RayfieldLibrary:CreateWindow(Settings)
 				local r,g,b = math.floor((h*255)+0.5),math.floor((s*255)+0.5),math.floor((v*255)+0.5)
 				ColorPickerSettings.Color = Color3.fromRGB(r,g,b)
 				if not ColorPickerSettings.Ext then
-					SaveConfiguration()
+					ConfigHelpers.Save()
 				end
 			end)
 			--RGB
@@ -3583,7 +3585,7 @@ function RayfieldLibrary:CreateWindow(Settings)
 				local r,g,b = math.floor((h*255)+0.5),math.floor((s*255)+0.5),math.floor((v*255)+0.5)
 				ColorPickerSettings.Color = Color3.fromRGB(r,g,b)
 				if not ColorPickerSettings.Ext then
-					SaveConfiguration(ColorPickerSettings.Flag..'\n'..tostring(ColorPickerSettings.Color))
+					ConfigHelpers.Save(ColorPickerSettings.Flag..'\n'..tostring(ColorPickerSettings.Color))
 				end
 			end
 			ColorPicker.RGB.RInput.InputBox.FocusLost:connect(function()
@@ -3618,7 +3620,7 @@ function RayfieldLibrary:CreateWindow(Settings)
 					pcall(function()ColorPickerSettings.Callback(Color3.fromHSV(h,s,v))end)
 					ColorPickerSettings.Color = Color3.fromRGB(r,g,b)
 					if not ColorPickerSettings.Ext then
-						SaveConfiguration()
+						ConfigHelpers.Save()
 					end
 				end
 				if sliderDragging then 
@@ -3638,7 +3640,7 @@ function RayfieldLibrary:CreateWindow(Settings)
 					pcall(function()ColorPickerSettings.Callback(Color3.fromHSV(h,s,v))end)
 					ColorPickerSettings.Color = Color3.fromRGB(r,g,b)
 					if not ColorPickerSettings.Ext then
-						SaveConfiguration()
+						ConfigHelpers.Save()
 					end
 				end
 			end)
@@ -3887,7 +3889,7 @@ function RayfieldLibrary:CreateWindow(Settings)
 				end
 
 				if not InputSettings.Ext then
-					SaveConfiguration()
+					ConfigHelpers.Save()
 				end
 			end)
 
@@ -3912,7 +3914,7 @@ function RayfieldLibrary:CreateWindow(Settings)
 				end)
 
 				if not InputSettings.Ext then
-					SaveConfiguration()
+					ConfigHelpers.Save()
 				end
 			end
 
@@ -4144,7 +4146,7 @@ function RayfieldLibrary:CreateWindow(Settings)
 						end
 						Debounce = false
 						if not DropdownSettings.Ext then
-							SaveConfiguration()
+							ConfigHelpers.Save()
 						end
 					end)
 
@@ -4221,7 +4223,7 @@ function RayfieldLibrary:CreateWindow(Settings)
 						end
 					end
 				end
-				--SaveConfiguration()
+				--ConfigHelpers.Save()
 			end
 
 			function DropdownSettings:Refresh(optionsTable: table) -- updates a dropdown with new options from optionsTable
@@ -4304,7 +4306,7 @@ function RayfieldLibrary:CreateWindow(Settings)
 				if Keybind.KeybindFrame.KeybindBox.Text == nil or Keybind.KeybindFrame.KeybindBox.Text == "" then
 					Keybind.KeybindFrame.KeybindBox.Text = KeybindSettings.CurrentKeybind
 					if not KeybindSettings.Ext then
-						SaveConfiguration()
+						ConfigHelpers.Save()
 					end
 				end
 			end)
@@ -4326,7 +4328,7 @@ function RayfieldLibrary:CreateWindow(Settings)
 						KeybindSettings.CurrentKeybind = tostring(NewKeyNoEnum)
 						Keybind.KeybindFrame.KeybindBox:ReleaseFocus()
 						if not KeybindSettings.Ext then
-							SaveConfiguration()
+							ConfigHelpers.Save()
 						end
 
 						if KeybindSettings.CallOnChange then
@@ -4382,7 +4384,7 @@ function RayfieldLibrary:CreateWindow(Settings)
 				KeybindSettings.CurrentKeybind = tostring(NewKeybind)
 				Keybind.KeybindFrame.KeybindBox:ReleaseFocus()
 				if not KeybindSettings.Ext then
-					SaveConfiguration()
+					ConfigHelpers.Save()
 				end
 
 				if KeybindSettings.CallOnChange then
@@ -4489,7 +4491,7 @@ function RayfieldLibrary:CreateWindow(Settings)
 				end
 
 				if not ToggleSettings.Ext then
-					SaveConfiguration()
+					ConfigHelpers.Save()
 				end
 			end)
 
@@ -4539,7 +4541,7 @@ function RayfieldLibrary:CreateWindow(Settings)
 				end
 
 				if not ToggleSettings.Ext then
-					SaveConfiguration()
+					ConfigHelpers.Save()
 				end
 			end
 
@@ -4689,7 +4691,7 @@ function RayfieldLibrary:CreateWindow(Settings)
 
 							SliderSettings.CurrentValue = NewValue
 							if not SliderSettings.Ext then
-								SaveConfiguration()
+								ConfigHelpers.Save()
 							end
 						end
 					else
@@ -4723,7 +4725,7 @@ function RayfieldLibrary:CreateWindow(Settings)
 
 				SliderSettings.CurrentValue = NewVal
 				if not SliderSettings.Ext then
-					SaveConfiguration()
+					ConfigHelpers.Save()
 				end
 			end
 
@@ -4778,10 +4780,10 @@ function RayfieldLibrary:CreateWindow(Settings)
 		local pendingConfigName = ""
 		local savedDropdown = nil
 
-		local presetNames, presetMap = normalizeConfigPresets(ConfigSettings.Presets or ConfigSettings.PresetConfigs or ConfigSettings.Configs)
+		local presetNames, presetMap = ConfigHelpers.NormalizePresets(ConfigSettings.Presets or ConfigSettings.PresetConfigs or ConfigSettings.Configs)
 
 		local function getSavedOptions()
-			local names = readNamedConfigIndex()
+			local names = ConfigHelpers.ReadNamedIndex()
 			if #names == 0 then
 				return {noSavedOption}
 			end
@@ -4845,7 +4847,7 @@ function RayfieldLibrary:CreateWindow(Settings)
 						return
 					end
 
-					loadConfigurationValue(preset, true)
+					ConfigHelpers.LoadValue(preset, true)
 					RayfieldLibrary:Notify({
 						Title = "Reverb Config",
 						Content = "Preset config loaded.",
@@ -4875,7 +4877,7 @@ function RayfieldLibrary:CreateWindow(Settings)
 			Ext = true,
 			Callback = function()
 				local name = validSavedSelection()
-				local success, message = loadNamedConfiguration(name)
+				local success, message = ConfigHelpers.LoadNamed(name)
 				if success then
 					RayfieldLibrary:Notify({
 						Title = "Reverb Config",
@@ -4909,8 +4911,8 @@ function RayfieldLibrary:CreateWindow(Settings)
 			Name = "Save Current Config",
 			Ext = true,
 			Callback = function()
-				local name = normalizeConfigName(pendingConfigName) or validSavedSelection()
-				local success, message = saveNamedConfiguration(name)
+				local name = ConfigHelpers.NormalizeName(pendingConfigName) or validSavedSelection()
+				local success, message = ConfigHelpers.SaveNamed(name)
 				if success then
 					refreshSavedDropdown(name)
 					RayfieldLibrary:Notify({
@@ -5461,13 +5463,13 @@ function RayfieldLibrary:LoadConfiguration()
 
 		local success, result = pcall(function()
 			if useStudio and config then
-				loaded = LoadConfiguration(config)
+				loaded = ConfigHelpers.Load(config)
 				return
 			end
 
 			if isfile then 
 				if callSafely(isfile, ConfigurationFolder .. "/" .. CFileName .. ConfigurationExtension) then
-					loaded = LoadConfiguration(callSafely(readfile, ConfigurationFolder .. "/" .. CFileName .. ConfigurationExtension))
+					loaded = ConfigHelpers.Load(callSafely(readfile, ConfigurationFolder .. "/" .. CFileName .. ConfigurationExtension))
 				end
 			else
 				notified = true
