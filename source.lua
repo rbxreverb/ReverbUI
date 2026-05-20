@@ -323,45 +323,71 @@ local RayfieldLibrary = {
 	Flags = {},
 	Theme = {
 		Default = {
-			TextColor = Color3.fromRGB(240, 240, 240),
+			TextColor = Color3.fromRGB(238, 248, 250),
+			TextMuted = Color3.fromRGB(140, 163, 173),
+			TextDim = Color3.fromRGB(88, 108, 120),
 
-			Background = Color3.fromRGB(14, 18, 22),
-			Topbar = Color3.fromRGB(20, 25, 30),
-			Shadow = Color3.fromRGB(8, 11, 14),
+			Accent = Color3.fromRGB(0, 226, 248),
+			AccentHover = Color3.fromRGB(72, 241, 255),
+			AccentDark = Color3.fromRGB(0, 118, 130),
+			AccentSoft = Color3.fromRGB(16, 58, 68),
+			AccentGlow = Color3.fromRGB(0, 180, 220),
 
-			NotificationBackground = Color3.fromRGB(16, 21, 26),
-			NotificationActionsBackground = Color3.fromRGB(230, 230, 230),
+			Background = Color3.fromRGB(6, 9, 13),
+			Topbar = Color3.fromRGB(9, 15, 20),
+			Shadow = Color3.fromRGB(0, 5, 8),
+			Surface = Color3.fromRGB(13, 20, 26),
+			SurfaceRaised = Color3.fromRGB(18, 29, 36),
+			SurfaceSunken = Color3.fromRGB(7, 12, 17),
+			PanelBackground = Color3.fromRGB(8, 13, 18),
+			PanelHeader = Color3.fromRGB(10, 18, 24),
+			Divider = Color3.fromRGB(28, 58, 68),
 
-			TabBackground = Color3.fromRGB(29, 36, 43),
-			TabStroke = Color3.fromRGB(42, 52, 61),
+			NotificationBackground = Color3.fromRGB(10, 17, 23),
+			NotificationActionsBackground = Color3.fromRGB(18, 32, 40),
+			NotificationStroke = Color3.fromRGB(0, 118, 130),
+
+			TabBackground = Color3.fromRGB(15, 26, 34),
+			TabStroke = Color3.fromRGB(31, 61, 70),
 			TabBackgroundSelected = Color3.fromRGB(0, 226, 248),
-			TabTextColor = Color3.fromRGB(240, 240, 240),
-			SelectedTabTextColor = Color3.fromRGB(10, 16, 20),
+			TabTextColor = Color3.fromRGB(198, 219, 225),
+			SelectedTabTextColor = Color3.fromRGB(4, 15, 20),
 
-			ElementBackground = Color3.fromRGB(22, 27, 33),
-			ElementBackgroundHover = Color3.fromRGB(29, 36, 43),
-			SecondaryElementBackground = Color3.fromRGB(16, 21, 26),
-			ElementStroke = Color3.fromRGB(42, 52, 61),
-			SecondaryElementStroke = Color3.fromRGB(33, 42, 50),
+			ElementBackground = Color3.fromRGB(13, 20, 26),
+			ElementBackgroundHover = Color3.fromRGB(20, 33, 42),
+			SecondaryElementBackground = Color3.fromRGB(8, 14, 19),
+			ElementStroke = Color3.fromRGB(30, 51, 60),
+			SecondaryElementStroke = Color3.fromRGB(21, 39, 48),
 
-			SliderBackground = Color3.fromRGB(0, 118, 130),
+			SliderBackground = Color3.fromRGB(8, 45, 54),
 			SliderProgress = Color3.fromRGB(0, 226, 248),
 			SliderStroke = Color3.fromRGB(72, 241, 255),
 
-			ToggleBackground = Color3.fromRGB(16, 21, 26),
+			ToggleBackground = Color3.fromRGB(7, 13, 18),
 			ToggleEnabled = Color3.fromRGB(0, 226, 248),
-			ToggleDisabled = Color3.fromRGB(100, 100, 100),
+			ToggleDisabled = Color3.fromRGB(78, 93, 102),
 			ToggleEnabledStroke = Color3.fromRGB(72, 241, 255),
-			ToggleDisabledStroke = Color3.fromRGB(125, 125, 125),
+			ToggleDisabledStroke = Color3.fromRGB(105, 124, 134),
 			ToggleEnabledOuterStroke = Color3.fromRGB(0, 118, 130),
-			ToggleDisabledOuterStroke = Color3.fromRGB(65, 65, 65),
+			ToggleDisabledOuterStroke = Color3.fromRGB(48, 61, 69),
 
-			DropdownSelected = Color3.fromRGB(29, 36, 43),
-			DropdownUnselected = Color3.fromRGB(16, 21, 26),
+			DropdownSelected = Color3.fromRGB(16, 40, 49),
+			DropdownUnselected = Color3.fromRGB(8, 14, 19),
 
-			InputBackground = Color3.fromRGB(16, 21, 26),
-			InputStroke = Color3.fromRGB(42, 52, 61),
-			PlaceholderColor = Color3.fromRGB(178, 178, 178)
+			InputBackground = Color3.fromRGB(7, 12, 17),
+			InputStroke = Color3.fromRGB(31, 61, 70),
+			PlaceholderColor = Color3.fromRGB(128, 151, 160),
+
+			FooterBackground = Color3.fromRGB(7, 12, 17),
+			FooterAccent = Color3.fromRGB(0, 226, 248),
+			TopbarAccent = Color3.fromRGB(0, 118, 130),
+			LogoGlow = Color3.fromRGB(0, 226, 248),
+			WatermarkColor = Color3.fromRGB(0, 118, 130),
+			WatermarkTransparency = 0.92,
+			TopbarIconActive = Color3.fromRGB(255, 255, 255),
+			Success = Color3.fromRGB(64, 220, 170),
+			Warning = Color3.fromRGB(245, 184, 82),
+			Danger = Color3.fromRGB(255, 92, 122),
 		},
 
 		Ocean = {
@@ -940,6 +966,9 @@ local FooterSpacerName = "ReverbFooterSpacer"
 local footerReady = false
 local ScrollCue = nil
 local scrollCueVisible = false
+local ThemeTopbarAccent = nil
+local ThemeLogoGlow = nil
+local ThemeWatermark = nil
 local MainUIScale = nil
 local AccountInfo = nil
 local AccountParagraph = nil
@@ -976,6 +1005,16 @@ local function normalizeThemeName(themeName)
 	end
 
 	return "Reverb"
+end
+
+local function themeColor(name, fallback)
+	local value = SelectedTheme and SelectedTheme[name]
+	return value or fallback
+end
+
+local function themeNumber(name, fallback)
+	local value = SelectedTheme and SelectedTheme[name]
+	return type(value) == "number" and value or fallback
 end
 
 local function normalizeSearchScope(scope)
@@ -1083,7 +1122,7 @@ local function resolveAccountInfo(Settings)
 		StatusTag = isPremium and "[PREMIUM]" or "[FREE]",
 		TitleStatusTag = isPremium and '<font color="#00e2f8">[PREMIUM]</font>' or '<font color="#5f6c76">[FREE]</font>',
 		BadgeText = isPremium and "Reverb Premium Access" or "Reverb Free Access",
-		BadgeColor = isPremium and ReverbBrandColor or ReverbMutedAccountColor,
+		BadgeColor = isPremium and themeColor("Accent", ReverbBrandColor) or themeColor("TextDim", ReverbMutedAccountColor),
 		UserNote = userNote,
 		SecondsLeft = secondsLeft,
 		TimeLeft = formatAccountTime(secondsLeft, isPremium),
@@ -1315,6 +1354,103 @@ local function getNotificationDuration(explicitDuration, calculatedDuration)
 	return 5
 end
 
+local function ensureThemeDecor()
+	if not ThemeTopbarAccent then
+		local divider = Topbar:FindFirstChild("Divider")
+		ThemeTopbarAccent = Instance.new("Frame")
+		ThemeTopbarAccent.Name = "ReverbTopbarAccent"
+		ThemeTopbarAccent.BackgroundColor3 = themeColor("TopbarAccent", ReverbBrandColor)
+		ThemeTopbarAccent.BorderSizePixel = 0
+		ThemeTopbarAccent.Position = UDim2.new(0, 14, 1, -1)
+		ThemeTopbarAccent.Size = UDim2.new(1, -28, 0, 1)
+		ThemeTopbarAccent.ZIndex = ((divider and divider.ZIndex) or Topbar.ZIndex) + 1
+		ThemeTopbarAccent.Parent = Topbar
+
+		local gradient = Instance.new("UIGradient")
+		gradient.Name = "SignalGradient"
+		gradient.Transparency = NumberSequence.new({
+			NumberSequenceKeypoint.new(0, 1),
+			NumberSequenceKeypoint.new(0.18, 0.4),
+			NumberSequenceKeypoint.new(0.5, 0),
+			NumberSequenceKeypoint.new(0.82, 0.4),
+			NumberSequenceKeypoint.new(1, 1),
+		})
+		gradient.Parent = ThemeTopbarAccent
+	end
+
+	if not ThemeLogoGlow and Topbar:FindFirstChild("Icon") then
+		ThemeLogoGlow = Instance.new("Frame")
+		ThemeLogoGlow.Name = "ReverbLogoGlow"
+		ThemeLogoGlow.AnchorPoint = Vector2.new(0.5, 0.5)
+		ThemeLogoGlow.BackgroundColor3 = themeColor("AccentSoft", ReverbBrandColor)
+		ThemeLogoGlow.BackgroundTransparency = 0.76
+		ThemeLogoGlow.BorderSizePixel = 0
+		ThemeLogoGlow.Position = UDim2.new(0, 31, 0.5, 0)
+		ThemeLogoGlow.Size = UDim2.new(0, 33, 0, 33)
+		ThemeLogoGlow.ZIndex = math.max((Topbar.Icon.ZIndex or 2) - 1, 1)
+		ThemeLogoGlow.Parent = Topbar
+
+		local corner = Instance.new("UICorner")
+		corner.CornerRadius = UDim.new(0, 9)
+		corner.Parent = ThemeLogoGlow
+
+		local stroke = Instance.new("UIStroke")
+		stroke.Name = "GlowStroke"
+		stroke.Color = themeColor("LogoGlow", ReverbBrandColor)
+		stroke.Transparency = 0.45
+		stroke.Thickness = 1
+		stroke.Parent = ThemeLogoGlow
+	end
+
+	if not ThemeWatermark then
+		ThemeWatermark = Instance.new("ImageLabel")
+		ThemeWatermark.Name = "ReverbThemeWatermark"
+		ThemeWatermark.AnchorPoint = Vector2.new(1, 1)
+		ThemeWatermark.BackgroundTransparency = 1
+		ThemeWatermark.Image = customAssets["ReverbIcon"]
+		ThemeWatermark.ImageColor3 = themeColor("WatermarkColor", ReverbBrandColor)
+		ThemeWatermark.ImageTransparency = themeNumber("WatermarkTransparency", 0.92)
+		ThemeWatermark.Position = UDim2.new(1, -16, 1, -38)
+		ThemeWatermark.Size = UDim2.new(0, 118, 0, 118)
+		ThemeWatermark.ZIndex = 1
+		ThemeWatermark.Parent = Main
+	end
+end
+
+local function applyThemeDecor()
+	ensureThemeDecor()
+
+	if ThemeTopbarAccent then
+		ThemeTopbarAccent.BackgroundColor3 = themeColor("TopbarAccent", themeColor("AccentDark", ReverbBrandColor))
+		local gradient = ThemeTopbarAccent:FindFirstChild("SignalGradient")
+		if gradient then
+			gradient.Color = ColorSequence.new({
+				ColorSequenceKeypoint.new(0, themeColor("AccentDark", ReverbBrandColor)),
+				ColorSequenceKeypoint.new(0.5, themeColor("AccentHover", ReverbBrandColor)),
+				ColorSequenceKeypoint.new(1, themeColor("AccentDark", ReverbBrandColor)),
+			})
+		end
+	end
+
+	if ThemeLogoGlow then
+		ThemeLogoGlow.BackgroundColor3 = themeColor("AccentSoft", themeColor("AccentDark", ReverbBrandColor))
+		local stroke = ThemeLogoGlow:FindFirstChild("GlowStroke")
+		if stroke then
+			stroke.Color = themeColor("LogoGlow", ReverbBrandColor)
+		end
+	end
+
+	if ThemeWatermark then
+		ThemeWatermark.Image = customAssets["ReverbIcon"]
+		ThemeWatermark.ImageColor3 = themeColor("WatermarkColor", themeColor("AccentDark", ReverbBrandColor))
+		ThemeWatermark.ImageTransparency = themeNumber("WatermarkTransparency", 0.92)
+	end
+
+	if dragBarCosmetic then
+		dragBarCosmetic.BackgroundColor3 = themeColor("Accent", ReverbBrandColor)
+	end
+end
+
 applySettingsExperience = function()
 	applyUIScale()
 	applyWindowSize()
@@ -1345,6 +1481,7 @@ local function ChangeTheme(Theme)
 	Rayfield.Main.Topbar.BackgroundColor3 = SelectedTheme.Topbar
 	Rayfield.Main.Topbar.CornerRepair.BackgroundColor3 = SelectedTheme.Topbar
 	Rayfield.Main.Shadow.Image.ImageColor3 = SelectedTheme.Shadow
+	applyThemeDecor()
 
 	Rayfield.Main.Topbar.ChangeSize.ImageColor3 = SelectedTheme.TextColor
 	Rayfield.Main.Topbar.Hide.ImageColor3 = SelectedTheme.TextColor
@@ -1354,18 +1491,19 @@ local function ChangeTheme(Theme)
 	end
 	if Topbar:FindFirstChild('Settings') then
 		Rayfield.Main.Topbar.Settings.ImageColor3 = SelectedTheme.TextColor
-		Rayfield.Main.Topbar.Divider.BackgroundColor3 = SelectedTheme.ElementStroke
+		Rayfield.Main.Topbar.Divider.BackgroundColor3 = themeColor("Divider", SelectedTheme.ElementStroke)
 	end
 	updateTopbarPageButtons()
 
-	Main.Search.BackgroundColor3 = SelectedTheme.TextColor
-	Main.Search.Shadow.ImageColor3 = SelectedTheme.TextColor
-	Main.Search.Search.ImageColor3 = SelectedTheme.TextColor
-	Main.Search.Input.PlaceholderColor3 = SelectedTheme.TextColor
-	Main.Search.UIStroke.Color = SelectedTheme.SecondaryElementStroke
+	Main.Search.BackgroundColor3 = themeColor("SurfaceSunken", SelectedTheme.SecondaryElementBackground)
+	Main.Search.Shadow.ImageColor3 = themeColor("AccentGlow", themeColor("Accent", ReverbBrandColor))
+	Main.Search.Search.ImageColor3 = themeColor("Accent", ReverbBrandColor)
+	Main.Search.Input.TextColor3 = SelectedTheme.TextColor
+	Main.Search.Input.PlaceholderColor3 = themeColor("TextMuted", SelectedTheme.PlaceholderColor)
+	Main.Search.UIStroke.Color = themeColor("InputStroke", SelectedTheme.SecondaryElementStroke)
 
 	if Main:FindFirstChild('Notice') then
-		Main.Notice.BackgroundColor3 = SelectedTheme.Background
+		Main.Notice.BackgroundColor3 = themeColor("PanelBackground", SelectedTheme.Background)
 	end
 
 	for _, text in ipairs(Rayfield:GetDescendants()) do
@@ -1384,19 +1522,19 @@ local function ChangeTheme(Theme)
 	end
 
 	if FooterBar then
-		FooterBar.BackgroundColor3 = SelectedTheme.Topbar
+		FooterBar.BackgroundColor3 = themeColor("FooterBackground", SelectedTheme.Topbar)
 	end
 	if FooterCornerRepair then
-		FooterCornerRepair.BackgroundColor3 = SelectedTheme.Topbar
+		FooterCornerRepair.BackgroundColor3 = themeColor("FooterBackground", SelectedTheme.Topbar)
 	end
 	if FooterDivider then
-		FooterDivider.BackgroundColor3 = SelectedTheme.ElementStroke
+		FooterDivider.BackgroundColor3 = themeColor("FooterAccent", themeColor("Accent", ReverbBrandColor))
 	end
 	if FooterLabel then
-		FooterLabel.TextColor3 = ReverbBrandColor
+		FooterLabel.TextColor3 = themeColor("FooterAccent", themeColor("Accent", ReverbBrandColor))
 	end
 	if ScrollCue then
-		ScrollCue.ImageColor3 = ReverbBrandColor
+		ScrollCue.ImageColor3 = themeColor("Accent", ReverbBrandColor)
 	end
 
 	updateStatsOverlayTheme()
@@ -1473,7 +1611,7 @@ local function ensureFooterLabel()
 	FooterBar = Instance.new("Frame")
 	FooterBar.Name = "ReverbFooterBar"
 	FooterBar.AnchorPoint = Vector2.new(0.5, 1)
-	FooterBar.BackgroundColor3 = SelectedTheme.Topbar
+	FooterBar.BackgroundColor3 = themeColor("FooterBackground", SelectedTheme.Topbar)
 	FooterBar.BackgroundTransparency = 1
 	FooterBar.ClipsDescendants = true
 	FooterBar.Position = UDim2.new(0.5, 0, 1, 0)
@@ -1487,7 +1625,7 @@ local function ensureFooterLabel()
 
 	FooterCornerRepair = Instance.new("Frame")
 	FooterCornerRepair.Name = "CornerRepair"
-	FooterCornerRepair.BackgroundColor3 = SelectedTheme.Topbar
+	FooterCornerRepair.BackgroundColor3 = themeColor("FooterBackground", SelectedTheme.Topbar)
 	FooterCornerRepair.BackgroundTransparency = 0
 	FooterCornerRepair.BorderSizePixel = 0
 	FooterCornerRepair.Position = UDim2.new(0, 0, 0, 0)
@@ -1497,7 +1635,7 @@ local function ensureFooterLabel()
 
 	FooterDivider = Instance.new("Frame")
 	FooterDivider.Name = "Divider"
-	FooterDivider.BackgroundColor3 = SelectedTheme.ElementStroke
+	FooterDivider.BackgroundColor3 = themeColor("FooterAccent", themeColor("Accent", ReverbBrandColor))
 	FooterDivider.BackgroundTransparency = 1
 	FooterDivider.BorderSizePixel = 0
 	FooterDivider.Position = UDim2.new(0, 0, 0, 0)
@@ -1513,7 +1651,7 @@ local function ensureFooterLabel()
 	FooterLabel.Position = UDim2.new(0.5, 0, 0.5, 1)
 	FooterLabel.Size = UDim2.new(1, -48, 1, -4)
 	FooterLabel.Text = ""
-	FooterLabel.TextColor3 = ReverbBrandColor
+	FooterLabel.TextColor3 = themeColor("FooterAccent", themeColor("Accent", ReverbBrandColor))
 	FooterLabel.TextSize = 12
 	FooterLabel.TextTransparency = 1
 	FooterLabel.TextTruncate = Enum.TextTruncate.AtEnd
@@ -1568,7 +1706,7 @@ local function setWindowFooter(footer, animate)
 	if FooterText then
 		local label = ensureFooterLabel()
 		label.Text = FooterText
-		label.TextColor3 = ReverbBrandColor
+		label.TextColor3 = themeColor("FooterAccent", themeColor("Accent", ReverbBrandColor))
 	elseif FooterLabel then
 		FooterLabel.Text = ""
 	end
@@ -1641,9 +1779,9 @@ updateStatsOverlayTheme = function()
 		return
 	end
 
-	StatsOverlay.BackgroundColor3 = SelectedTheme.Background
+	StatsOverlay.BackgroundColor3 = themeColor("SurfaceSunken", SelectedTheme.Background)
 	StatsOverlay.BackgroundTransparency = 0.08
-	StatsOverlay.UIStroke.Color = SelectedTheme.ElementStroke
+	StatsOverlay.UIStroke.Color = themeColor("Divider", SelectedTheme.ElementStroke)
 	if StatsOverlayText then
 		StatsOverlayText.TextColor3 = SelectedTheme.TextColor
 	end
@@ -1828,7 +1966,7 @@ local function ensureScrollCue()
 	ScrollCue.Name = "ReverbScrollCue"
 	ScrollCue.AnchorPoint = Vector2.new(0.5, 1)
 	ScrollCue.BackgroundTransparency = 1
-	ScrollCue.ImageColor3 = ReverbBrandColor
+	ScrollCue.ImageColor3 = themeColor("Accent", ReverbBrandColor)
 	ScrollCue.ImageTransparency = 1
 	ScrollCue.Size = UDim2.new(0, 18, 0, 18)
 	ScrollCue.ZIndex = 49
@@ -2415,10 +2553,10 @@ function RayfieldLibrary:Notify(data) -- action e.g open messages
 		-- Set initial transparency values
 
 		newNotification.Title.TextColor3 = SelectedTheme.TextColor
-		newNotification.Description.TextColor3 = SelectedTheme.TextColor
-		newNotification.BackgroundColor3 = SelectedTheme.Background
-		newNotification.UIStroke.Color = SelectedTheme.TextColor
-		newNotification.Icon.ImageColor3 = SelectedTheme.TextColor
+		newNotification.Description.TextColor3 = themeColor("TextMuted", SelectedTheme.TextColor)
+		newNotification.BackgroundColor3 = themeColor("NotificationBackground", SelectedTheme.Background)
+		newNotification.UIStroke.Color = themeColor("NotificationStroke", themeColor("AccentDark", SelectedTheme.TextColor))
+		newNotification.Icon.ImageColor3 = themeColor("Accent", SelectedTheme.TextColor)
 
 		newNotification.BackgroundTransparency = 1
 		newNotification.Title.TextTransparency = 1
@@ -2457,7 +2595,7 @@ function RayfieldLibrary:Notify(data) -- action e.g open messages
 
 		task.wait(0.05)
 		TweenService:Create(newNotification.Description, getTweenInfo(0.3, Enum.EasingStyle.Exponential), {TextTransparency = 0.35}):Play()
-		TweenService:Create(newNotification.UIStroke, TweenInfo.new(0.4, Enum.EasingStyle.Exponential), {Transparency = 0.95}):Play()
+		TweenService:Create(newNotification.UIStroke, TweenInfo.new(0.4, Enum.EasingStyle.Exponential), {Transparency = 0.72}):Play()
 		TweenService:Create(newNotification.Shadow, getTweenInfo(0.3, Enum.EasingStyle.Exponential), {ImageTransparency = 0.82}):Play()
 
 		local waitDuration = math.min(math.max((#newNotification.Description.Text * 0.1) + 2.5, 3), 10)
@@ -2888,7 +3026,7 @@ local function createAccount(window)
 	})
 
 	newTab:CreateSection("Upgrade Options")
-	newTab:CreateLabel("Reverb Premium Key Pricing", "badge-dollar-sign", ReverbBrandColor, true)
+	newTab:CreateLabel("Reverb Premium Key Pricing", "badge-dollar-sign", themeColor("Accent", ReverbBrandColor), true)
 	newTab:CreateParagraph({
 		Title = "Available Plans",
 		Content = formatPricingDetails()
@@ -3120,6 +3258,8 @@ function RayfieldLibrary:CreateWindow(Settings)
 			warn('issue rendering theme. no theme on file')
 			print(result)
 		end
+	else
+		pcall(ChangeTheme, 'Reverb')
 	end
 
 	Topbar.Visible = false
@@ -5009,7 +5149,7 @@ function RayfieldLibrary:CreateWindow(Settings)
 
 		local changelogTab = Window:CreateTab(tabName, icon)
 		local entries = ChangelogHelpers.NormalizeEntries(ChangelogSettings.Entries or ChangelogSettings.Updates or ChangelogSettings.Changes or ChangelogSettings.Changelog)
-		local latestColor = ChangelogSettings.LatestColor or ReverbBrandColor
+		local latestColor = ChangelogSettings.LatestColor or themeColor("Accent", ReverbBrandColor)
 		local historyTitle = ChangelogSettings.HistoryTitle or ChangelogSettings.ScriptName or ChangelogSettings.GameName or ChangelogSettings.Title or "This Script"
 		local fullChangelogUrl = ChangelogSettings.FullChangelogUrl or ChangelogSettings.BlogUrl or AccountLinks.Blog
 
@@ -5078,7 +5218,7 @@ function RayfieldLibrary:CreateWindow(Settings)
 
 	Topbar.BackgroundTransparency = 1
 	Topbar.Divider.Size = UDim2.new(0, 0, 0, 1)
-	Topbar.Divider.BackgroundColor3 = SelectedTheme.ElementStroke
+	Topbar.Divider.BackgroundColor3 = themeColor("Divider", SelectedTheme.ElementStroke)
 	Topbar.CornerRepair.BackgroundTransparency = 1
 	Topbar.Title.TextTransparency = 1
 	Topbar.Search.ImageTransparency = 1
@@ -5380,7 +5520,7 @@ end
 
 local function applyTopbarButtonState(button, hovered)
 	local highlighted = hovered or isTopbarPageButtonActive(button)
-	local iconColor = highlighted and Color3.fromRGB(255, 255, 255) or SelectedTheme.TextColor
+	local iconColor = highlighted and themeColor("TopbarIconActive", Color3.fromRGB(255, 255, 255)) or SelectedTheme.TextColor
 	local iconTransparency = highlighted and 0 or 0.8
 
 	TweenService:Create(button, getTweenInfo(0.25, Enum.EasingStyle.Exponential), {
