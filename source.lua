@@ -141,7 +141,7 @@ local settingsTable = {
 		notificationPosition = {Type = 'dropdown', Value = 'Top Right', Name = 'Notification Position', Options = {'Top Right', 'Top Left', 'Bottom Right', 'Bottom Left'}, Order = 20},
 	},
 	Search = {
-		searchScope = {Type = 'dropdown', Value = 'All Tabs + Panels', Name = 'Search Scope', Options = {'All Tabs + Panels', 'Current Panel'}, Order = 10},
+		searchScope = {Type = 'hidden', Value = 'All Tabs + Panels', Name = 'Search Scope', Options = {'All Tabs + Panels'}, Order = 10},
 	},
 	Performance = {
 		statsOverlay = {Type = 'toggle', Value = false, Name = 'Show Performance Overlay', Order = 10},
@@ -153,7 +153,7 @@ local settingsTable = {
 		autoLoadSavedConfig = {Type = 'toggle', Value = false, Name = 'Remember Last Config', Order = 10},
 	}
 }
-local settingsCategoryOrder = {"General", "Config", "Appearance", "Search", "Notifications", "Performance"}
+local settingsCategoryOrder = {"General", "Config", "Appearance", "Notifications", "Performance"}
 
 -- Settings that have been overridden by the developer. These will not be saved to the user's configuration file
 -- Overridden settings always take precedence over settings in the configuration file, and are cleared if the user changes the setting in the UI
@@ -1009,10 +1009,6 @@ local function themeColor(name, fallback)
 end
 
 local function normalizeSearchScope(scope)
-	if scope == "Current Page" or scope == "Current Panel" then
-		return "Current Panel"
-	end
-
 	return "All Tabs + Panels"
 end
 
@@ -5414,7 +5410,6 @@ end
 local function updateGlobalSearch()
 	local queryText = Main.Search.Input.Text or ""
 	local query = string.lower(string.match(queryText, "^%s*(.-)%s*$"))
-	local searchEverywhere = normalizeSearchScope(getSetting("Search", "searchScope")) ~= "Current Panel"
 
 	if #query == 0 then
 		for _, page in ipairs(getSearchablePages()) do
@@ -5425,19 +5420,14 @@ local function updateGlobalSearch()
 
 	local currentPage = Elements.UIPageLayout.CurrentPage
 	local searchPage, pageMatched
-	if searchEverywhere then
-		searchPage, pageMatched = findSearchPage(query)
-	else
-		searchPage = currentPage
-		pageMatched = currentPage and matchesSearchText(currentPage.Name, query)
-	end
+	searchPage, pageMatched = findSearchPage(query)
 
 	for _, page in ipairs(getSearchablePages()) do
 		resetSearchPage(page)
 	end
 
 	if searchPage then
-		if searchEverywhere and Elements.UIPageLayout.CurrentPage ~= searchPage then
+		if Elements.UIPageLayout.CurrentPage ~= searchPage then
 			Elements.UIPageLayout:JumpTo(searchPage)
 			currentPage = searchPage
 		end
