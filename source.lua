@@ -2034,6 +2034,13 @@ local function setScrollCueVisible(visible)
 	TweenService:Create(ScrollCue, getTweenInfo(0.25, Enum.EasingStyle.Exponential), {ImageTransparency = visible and 0.45 or 1}):Play()
 end
 
+local function hideScrollCueNow()
+	scrollCueVisible = false
+	if ScrollCue then
+		ScrollCue.ImageTransparency = 1
+	end
+end
+
 updateScrollCue = function()
 	if not footerReady or Hidden or Minimised or searchOpen or not Main.Visible or not Elements.Visible then
 		setScrollCueVisible(false)
@@ -2042,6 +2049,11 @@ updateScrollCue = function()
 
 	local currentPage = Elements.UIPageLayout.CurrentPage
 	if not currentPage or currentPage.ClassName ~= "ScrollingFrame" then
+		setScrollCueVisible(false)
+		return
+	end
+
+	if Main.AbsoluteSize.Y < 160 or currentPage.AbsoluteSize.Y < 80 then
 		setScrollCueVisible(false)
 		return
 	end
@@ -2839,6 +2851,7 @@ end
 
 local function Maximise()
 	Debounce = true
+	hideScrollCueNow()
 	Topbar.ChangeSize.Image = customAssets[tostring(10137941941)]
 
 	TweenService:Create(Topbar.UIStroke, TweenInfo.new(0.5, Enum.EasingStyle.Exponential), {Transparency = 1}):Play()
@@ -2869,6 +2882,7 @@ end
 
 local function Unhide()
 	Debounce = true
+	hideScrollCueNow()
 	Main.Position = UDim2.new(0.5, 0, 0.5, 0)
 	Main.Visible = true
 	TweenService:Create(Main, TweenInfo.new(0.5, Enum.EasingStyle.Exponential), {Size = getExpandedMainSize()}):Play()
@@ -2914,7 +2928,7 @@ local function Unhide()
 
 	setElementsVisible(true)
 	refreshFooterVisibility(true)
-	updateScrollCue()
+	task.delay(0.55, updateScrollCue)
 
 	TweenService:Create(dragBarCosmetic, TweenInfo.new(0.25, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {BackgroundTransparency = 0.5}):Play()
 
@@ -5305,7 +5319,7 @@ function RayfieldLibrary:CreateWindow(Settings)
 	end
 	footerReady = true
 	refreshFooterVisibility(true)
-	updateScrollCue()
+	task.delay(0.15, updateScrollCue)
 
 	function Window.ModifyTheme(NewTheme)
 		local success = pcall(ChangeTheme, NewTheme)
