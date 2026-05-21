@@ -1530,11 +1530,30 @@ local function resolveFooterText(footer)
 	local scriptName = footer.Name or footer.ScriptName
 	local version = footer.Version or footer.ScriptVersion
 	local author = footer.By or footer.Author
+	local updated = footer.LastUpdated or footer.Updated or footer.UpdateDate or footer.LastUpdate or footer.ScriptUpdated or footer.LastScriptUpdate
+	local builtText = nil
+
 	if scriptName and version then
-		local builtText = tostring(scriptName).." "..tostring(version)
+		builtText = tostring(scriptName).." "..tostring(version)
 		if author then
 			builtText = builtText.." By "..tostring(author)
 		end
+	elseif scriptName then
+		builtText = tostring(scriptName)
+	elseif version then
+		builtText = tostring(version)
+	end
+
+	if updated and tostring(updated) ~= "" then
+		local updatedText = "Updated "..tostring(updated)
+		if builtText then
+			builtText = builtText.." | "..updatedText
+		else
+			builtText = updatedText
+		end
+	end
+
+	if builtText then
 		return builtText
 	end
 
@@ -3170,7 +3189,8 @@ function RayfieldLibrary:CreateWindow(Settings)
 		footerSetting = {
 			Name = Settings.ScriptName or Settings.Name,
 			Version = Settings.ScriptVersion,
-			By = Settings.By or Settings.Author or "Reverb"
+			By = Settings.By or Settings.Author or "Reverb",
+			LastUpdated = Settings.LastUpdated or Settings.Updated or Settings.UpdateDate or Settings.LastUpdate or Settings.ScriptUpdated or Settings.LastScriptUpdate
 		}
 	end
 	setWindowFooter(footerSetting, false)
