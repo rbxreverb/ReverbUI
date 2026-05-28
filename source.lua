@@ -383,6 +383,10 @@ local RayfieldLibrary = {
 			LogoGlow = Color3.fromRGB(0, 226, 248),
 			TopbarIconActive = Color3.fromRGB(0, 226, 248),
 			SectionText = Color3.fromRGB(0, 175, 194),
+			LoadingAccent = Color3.fromRGB(0, 175, 194),
+			LoadingAccentBright = Color3.fromRGB(98, 243, 255),
+			LoadingTrack = Color3.fromRGB(9, 11, 14),
+			LoadingLogo = Color3.fromRGB(0, 226, 248),
 			Success = Color3.fromRGB(64, 220, 170),
 			Warning = Color3.fromRGB(245, 184, 82),
 			Danger = Color3.fromRGB(255, 92, 122),
@@ -933,8 +937,10 @@ local TabList = Main.TabList
 local dragBar = Rayfield:FindFirstChild('Drag')
 local dragInteract = dragBar and dragBar.Interact or nil
 local dragBarCosmetic = dragBar and dragBar.Drag or nil
+local LoadingLogo = nil
 local LoadingBar = nil
 local LoadingBarFill = nil
+local LoadingBarDot = nil
 
 Rayfield.DisplayOrder = 100
 LoadingFrame.Version.Text = "Reverb Hub"
@@ -1348,10 +1354,23 @@ local function ensureLoadingDecor()
 		return
 	end
 
+	LoadingLogo = Instance.new("ImageLabel")
+	LoadingLogo.Name = "ReverbLoadingLogo"
+	LoadingLogo.AnchorPoint = Vector2.new(0.5, 0.5)
+	LoadingLogo.BackgroundTransparency = 1
+	LoadingLogo.Image = customAssets["ReverbIcon"]
+	LoadingLogo.ImageColor3 = themeColor("LoadingLogo", themeColor("Accent", ReverbBrandColor))
+	LoadingLogo.ImageTransparency = 1
+	LoadingLogo.Position = UDim2.new(0.5, 0, 0, 18)
+	LoadingLogo.Size = UDim2.new(0, 32, 0, 32)
+	LoadingLogo.ScaleType = Enum.ScaleType.Fit
+	LoadingLogo.ZIndex = (LoadingFrame.Title and LoadingFrame.Title.ZIndex or LoadingFrame.ZIndex) + 1
+	LoadingLogo.Parent = LoadingFrame
+
 	LoadingBar = Instance.new("Frame")
 	LoadingBar.Name = "ReverbLoadingBar"
 	LoadingBar.AnchorPoint = Vector2.new(0.5, 0.5)
-	LoadingBar.BackgroundColor3 = themeColor("SurfaceSunken", SelectedTheme.SecondaryElementBackground)
+	LoadingBar.BackgroundColor3 = themeColor("LoadingTrack", themeColor("SurfaceSunken", SelectedTheme.SecondaryElementBackground))
 	LoadingBar.BackgroundTransparency = 1
 	LoadingBar.BorderSizePixel = 0
 	LoadingBar.ClipsDescendants = true
@@ -1366,7 +1385,7 @@ local function ensureLoadingDecor()
 
 	LoadingBarFill = Instance.new("Frame")
 	LoadingBarFill.Name = "Fill"
-	LoadingBarFill.BackgroundColor3 = themeColor("SectionText", themeColor("AccentGlow", ReverbBrandColor))
+	LoadingBarFill.BackgroundColor3 = themeColor("LoadingAccent", themeColor("SectionText", ReverbBrandColor))
 	LoadingBarFill.BackgroundTransparency = 1
 	LoadingBarFill.BorderSizePixel = 0
 	LoadingBarFill.Size = UDim2.new(0, 0, 1, 0)
@@ -1376,27 +1395,67 @@ local function ensureLoadingDecor()
 	local fillCorner = Instance.new("UICorner")
 	fillCorner.CornerRadius = UDim.new(1, 0)
 	fillCorner.Parent = LoadingBarFill
+
+	LoadingBarDot = Instance.new("Frame")
+	LoadingBarDot.Name = "LeadingDot"
+	LoadingBarDot.AnchorPoint = Vector2.new(0.5, 0.5)
+	LoadingBarDot.BackgroundColor3 = themeColor("LoadingAccentBright", themeColor("AccentHover", ReverbBrandColor))
+	LoadingBarDot.BackgroundTransparency = 1
+	LoadingBarDot.BorderSizePixel = 0
+	LoadingBarDot.Position = UDim2.new(0, 0, 0.5, 0)
+	LoadingBarDot.Size = UDim2.new(0, 7, 0, 7)
+	LoadingBarDot.ZIndex = LoadingBar.ZIndex + 2
+	LoadingBarDot.Parent = LoadingBar
+
+	local dotCorner = Instance.new("UICorner")
+	dotCorner.CornerRadius = UDim.new(1, 0)
+	dotCorner.Parent = LoadingBarDot
+
+	local dotStroke = Instance.new("UIStroke")
+	dotStroke.Name = "GlowStroke"
+	dotStroke.Color = themeColor("LoadingAccentBright", themeColor("AccentHover", ReverbBrandColor))
+	dotStroke.Transparency = 1
+	dotStroke.Thickness = 1
+	dotStroke.Parent = LoadingBarDot
 end
 
 local function applyLoadingTheme()
-	LoadingFrame.Title.TextColor3 = SelectedTheme.TextColor
-	LoadingFrame.Subtitle.TextColor3 = themeColor("TextMuted", SelectedTheme.TextColor)
-	LoadingFrame.Version.TextColor3 = themeColor("SectionText", themeColor("FooterAccent", SelectedTheme.TextColor))
+	LoadingFrame.Title.TextColor3 = themeColor("LoadingTitle", SelectedTheme.TextColor)
+	LoadingFrame.Subtitle.TextColor3 = themeColor("LoadingSubtitle", themeColor("TextMuted", SelectedTheme.TextColor))
+	LoadingFrame.Version.TextColor3 = themeColor("LoadingAccent", themeColor("SectionText", SelectedTheme.TextColor))
 
+	if LoadingLogo then
+		LoadingLogo.Image = customAssets["ReverbIcon"]
+		LoadingLogo.ImageColor3 = themeColor("LoadingLogo", themeColor("Accent", ReverbBrandColor))
+	end
 	if LoadingBar then
-		LoadingBar.BackgroundColor3 = themeColor("SurfaceSunken", SelectedTheme.SecondaryElementBackground)
+		LoadingBar.BackgroundColor3 = themeColor("LoadingTrack", themeColor("SurfaceSunken", SelectedTheme.SecondaryElementBackground))
 	end
 	if LoadingBarFill then
-		LoadingBarFill.BackgroundColor3 = themeColor("SectionText", themeColor("AccentGlow", ReverbBrandColor))
+		LoadingBarFill.BackgroundColor3 = themeColor("LoadingAccent", themeColor("SectionText", ReverbBrandColor))
+	end
+	if LoadingBarDot then
+		LoadingBarDot.BackgroundColor3 = themeColor("LoadingAccentBright", themeColor("AccentHover", ReverbBrandColor))
+		local stroke = LoadingBarDot:FindFirstChild("GlowStroke")
+		if stroke then
+			stroke.Color = themeColor("LoadingAccentBright", themeColor("AccentHover", ReverbBrandColor))
+		end
 	end
 end
 
 local function resetLoadingDecor()
 	ensureLoadingDecor()
 	applyLoadingTheme()
+	LoadingLogo.ImageTransparency = 1
 	LoadingBar.BackgroundTransparency = 1
 	LoadingBarFill.BackgroundTransparency = 1
 	LoadingBarFill.Size = UDim2.new(0, 0, 1, 0)
+	LoadingBarDot.BackgroundTransparency = 1
+	LoadingBarDot.Position = UDim2.new(0, 0, 0.5, 0)
+	local stroke = LoadingBarDot:FindFirstChild("GlowStroke")
+	if stroke then
+		stroke.Transparency = 1
+	end
 end
 
 local function setLogoGlowTransparency(backgroundTransparency, strokeTransparency, duration)
@@ -3408,6 +3467,7 @@ function RayfieldLibrary:CreateWindow(Settings)
 	task.wait(0.5)
 	TweenService:Create(Main, TweenInfo.new(0.7, Enum.EasingStyle.Exponential), {BackgroundTransparency = 0}):Play()
 	TweenService:Create(Main.Shadow.Image, TweenInfo.new(0.7, Enum.EasingStyle.Exponential), {ImageTransparency = 0.6}):Play()
+	TweenService:Create(LoadingLogo, TweenInfo.new(0.45, Enum.EasingStyle.Exponential), {ImageTransparency = 0.08}):Play()
 	task.wait(0.1)
 	TweenService:Create(LoadingFrame.Title, TweenInfo.new(0.7, Enum.EasingStyle.Exponential), {TextTransparency = 0}):Play()
 	task.wait(0.05)
@@ -3416,7 +3476,22 @@ function RayfieldLibrary:CreateWindow(Settings)
 	TweenService:Create(LoadingFrame.Version, TweenInfo.new(0.7, Enum.EasingStyle.Exponential), {TextTransparency = 0}):Play()
 	TweenService:Create(LoadingBar, TweenInfo.new(0.35, Enum.EasingStyle.Exponential), {BackgroundTransparency = 0.45}):Play()
 	TweenService:Create(LoadingBarFill, TweenInfo.new(0.35, Enum.EasingStyle.Exponential), {BackgroundTransparency = 0}):Play()
+	TweenService:Create(LoadingBarDot, TweenInfo.new(0.35, Enum.EasingStyle.Exponential), {BackgroundTransparency = 0}):Play()
+	local dotStroke = LoadingBarDot:FindFirstChild("GlowStroke")
+	if dotStroke then
+		TweenService:Create(dotStroke, TweenInfo.new(0.35, Enum.EasingStyle.Exponential), {Transparency = 0.35}):Play()
+	end
 	TweenService:Create(LoadingBarFill, TweenInfo.new(1.05, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out), {Size = UDim2.new(1, 0, 1, 0)}):Play()
+	TweenService:Create(LoadingBarDot, TweenInfo.new(1.05, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out), {Position = UDim2.new(1, 0, 0.5, 0)}):Play()
+	task.delay(1.05, function()
+		if LoadingBarFill and LoadingBarDot then
+			local pulseColor = themeColor("LoadingAccentBright", themeColor("AccentHover", ReverbBrandColor))
+			LoadingBarFill.BackgroundColor3 = pulseColor
+			LoadingBarDot.BackgroundColor3 = pulseColor
+			TweenService:Create(LoadingBarFill, TweenInfo.new(0.22, Enum.EasingStyle.Exponential), {BackgroundColor3 = themeColor("LoadingAccent", themeColor("SectionText", ReverbBrandColor))}):Play()
+			TweenService:Create(LoadingBarDot, TweenInfo.new(0.22, Enum.EasingStyle.Exponential), {BackgroundColor3 = themeColor("LoadingAccent", themeColor("SectionText", ReverbBrandColor))}):Play()
+		end
+	end)
 
 
 	Elements.Template.LayoutOrder = 100000
@@ -5263,11 +5338,21 @@ function RayfieldLibrary:CreateWindow(Settings)
 	TweenService:Create(LoadingFrame.Title, TweenInfo.new(0.2, Enum.EasingStyle.Exponential), {TextTransparency = 1}):Play()
 	TweenService:Create(LoadingFrame.Subtitle, TweenInfo.new(0.2, Enum.EasingStyle.Exponential), {TextTransparency = 1}):Play()
 	TweenService:Create(LoadingFrame.Version, TweenInfo.new(0.2, Enum.EasingStyle.Exponential), {TextTransparency = 1}):Play()
+	if LoadingLogo then
+		TweenService:Create(LoadingLogo, TweenInfo.new(0.2, Enum.EasingStyle.Exponential), {ImageTransparency = 1}):Play()
+	end
 	if LoadingBar then
 		TweenService:Create(LoadingBar, TweenInfo.new(0.2, Enum.EasingStyle.Exponential), {BackgroundTransparency = 1}):Play()
 	end
 	if LoadingBarFill then
 		TweenService:Create(LoadingBarFill, TweenInfo.new(0.2, Enum.EasingStyle.Exponential), {BackgroundTransparency = 1}):Play()
+	end
+	if LoadingBarDot then
+		TweenService:Create(LoadingBarDot, TweenInfo.new(0.2, Enum.EasingStyle.Exponential), {BackgroundTransparency = 1}):Play()
+		local dotStroke = LoadingBarDot:FindFirstChild("GlowStroke")
+		if dotStroke then
+			TweenService:Create(dotStroke, TweenInfo.new(0.2, Enum.EasingStyle.Exponential), {Transparency = 1}):Play()
+		end
 	end
 	task.wait(0.1)
 	TweenService:Create(Main, TweenInfo.new(0.6, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out), {Size = getExpandedMainSize()}):Play()
