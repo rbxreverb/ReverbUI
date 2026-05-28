@@ -1471,10 +1471,29 @@ local function applyLoadingLayout()
 	end
 end
 
+local function stabilizeLoadingLayout()
+	applyLoadingLayout()
+	task.defer(function()
+		if not rayfieldDestroyed then
+			applyLoadingLayout()
+		end
+	end)
+	task.delay(0.12, function()
+		if not rayfieldDestroyed then
+			applyLoadingLayout()
+		end
+	end)
+	task.delay(0.35, function()
+		if not rayfieldDestroyed then
+			applyLoadingLayout()
+		end
+	end)
+end
+
 local function resetLoadingDecor()
 	ensureLoadingDecor()
 	applyLoadingTheme()
-	applyLoadingLayout()
+	stabilizeLoadingLayout()
 	LoadingLogo.ImageTransparency = 1
 	LoadingBar.BackgroundTransparency = 1
 	LoadingBarFill.BackgroundTransparency = 1
@@ -3396,9 +3415,11 @@ function RayfieldLibrary:CreateWindow(Settings)
 	else
 		pcall(ChangeTheme, 'Reverb')
 	end
+	stabilizeLoadingLayout()
 
 	Topbar.Visible = false
 	Elements.Visible = false
+	stabilizeLoadingLayout()
 	LoadingFrame.Visible = true
 
 	if Settings.EnableReverbLibPrompts and not (Settings.DisableReverbLibPrompts or Settings.DisableRayfieldPrompts) then
@@ -3494,6 +3515,7 @@ function RayfieldLibrary:CreateWindow(Settings)
 	end
 
 	task.wait(0.5)
+	stabilizeLoadingLayout()
 	TweenService:Create(Main, TweenInfo.new(0.7, Enum.EasingStyle.Exponential), {BackgroundTransparency = 0}):Play()
 	TweenService:Create(Main.Shadow.Image, TweenInfo.new(0.7, Enum.EasingStyle.Exponential), {ImageTransparency = 0.6}):Play()
 	TweenService:Create(LoadingLogo, TweenInfo.new(0.45, Enum.EasingStyle.Exponential), {ImageTransparency = 0.08}):Play()
