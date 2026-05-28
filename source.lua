@@ -1361,11 +1361,11 @@ local function ensureLoadingDecor()
 	LoadingLogo.Image = customAssets["ReverbIcon"]
 	LoadingLogo.ImageColor3 = themeColor("LoadingLogo", themeColor("Accent", ReverbBrandColor))
 	LoadingLogo.ImageTransparency = 1
-	LoadingLogo.Position = UDim2.new(0.5, 0, 0.5, -8)
+	LoadingLogo.Position = UDim2.new(0.5, 0, 0.5, 0)
 	LoadingLogo.Size = UDim2.new(0, 32, 0, 32)
 	LoadingLogo.ScaleType = Enum.ScaleType.Fit
-	LoadingLogo.ZIndex = (LoadingFrame.Title and LoadingFrame.Title.ZIndex or LoadingFrame.ZIndex) + 1
-	LoadingLogo.Parent = LoadingFrame
+	LoadingLogo.ZIndex = (LoadingFrame.Title and LoadingFrame.Title.ZIndex or LoadingFrame.ZIndex) + 2
+	LoadingLogo.Parent = Main
 
 	LoadingBar = Instance.new("Frame")
 	LoadingBar.Name = "ReverbLoadingBar"
