@@ -1444,9 +1444,37 @@ local function applyLoadingTheme()
 	end
 end
 
+local function applyLoadingLayout()
+	LoadingFrame.Title.AnchorPoint = Vector2.new(0.5, 0.5)
+	LoadingFrame.Title.Position = UDim2.new(0.5, 0, 0.56, 0)
+	LoadingFrame.Title.Size = UDim2.new(1, -44, 0, 18)
+	LoadingFrame.Title.TextXAlignment = Enum.TextXAlignment.Center
+	LoadingFrame.Title.TextYAlignment = Enum.TextYAlignment.Center
+
+	LoadingFrame.Subtitle.AnchorPoint = Vector2.new(0.5, 0.5)
+	LoadingFrame.Subtitle.Position = UDim2.new(0.5, 0, 0.66, 0)
+	LoadingFrame.Subtitle.Size = UDim2.new(1, -44, 0, 16)
+	LoadingFrame.Subtitle.TextXAlignment = Enum.TextXAlignment.Center
+	LoadingFrame.Subtitle.TextYAlignment = Enum.TextYAlignment.Center
+
+	LoadingFrame.Version.AnchorPoint = Vector2.new(0.5, 0.5)
+	LoadingFrame.Version.Position = UDim2.new(0.5, 0, 0.78, 0)
+	LoadingFrame.Version.Size = UDim2.new(1, -44, 0, 16)
+	LoadingFrame.Version.TextXAlignment = Enum.TextXAlignment.Center
+	LoadingFrame.Version.TextYAlignment = Enum.TextYAlignment.Center
+
+	if LoadingLogo then
+		LoadingLogo.Position = UDim2.new(0.5, 0, 0.36, 0)
+	end
+	if LoadingBar then
+		LoadingBar.Position = UDim2.new(0.5, 0, 1, -20)
+	end
+end
+
 local function resetLoadingDecor()
 	ensureLoadingDecor()
 	applyLoadingTheme()
+	applyLoadingLayout()
 	LoadingLogo.ImageTransparency = 1
 	LoadingBar.BackgroundTransparency = 1
 	LoadingBarFill.BackgroundTransparency = 1
