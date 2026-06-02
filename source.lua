@@ -974,6 +974,7 @@ local FooterSpacerName = "ReverbFooterSpacer"
 local footerReady = false
 local ScrollCue = nil
 local scrollCueVisible = false
+local ScrollCueState = {Page = nil, Count = 0, Pending = false}
 local ThemeLogoGlow = nil
 local MainUIScale = nil
 local AccountInfo = nil
@@ -2158,6 +2159,9 @@ end
 
 local function hideScrollCueNow()
 	scrollCueVisible = false
+	ScrollCueState.Page = nil
+	ScrollCueState.Count = 0
+	ScrollCueState.Pending = false
 	if ScrollCue then
 		ScrollCue.ImageTransparency = 1
 	end
@@ -2165,17 +2169,23 @@ end
 
 updateScrollCue = function()
 	if not footerReady or Hidden or Minimised or searchOpen or not Main.Visible or not Elements.Visible then
+		ScrollCueState.Page = nil
+		ScrollCueState.Count = 0
 		setScrollCueVisible(false)
 		return
 	end
 
 	local currentPage = Elements.UIPageLayout.CurrentPage
 	if not currentPage or currentPage.ClassName ~= "ScrollingFrame" then
+		ScrollCueState.Page = nil
+		ScrollCueState.Count = 0
 		setScrollCueVisible(false)
 		return
 	end
 
 	if Main.AbsoluteSize.Y < 160 or currentPage.AbsoluteSize.Y < 80 then
+		ScrollCueState.Page = nil
+		ScrollCueState.Count = 0
 		setScrollCueVisible(false)
 		return
 	end
@@ -2183,8 +2193,33 @@ updateScrollCue = function()
 	local canScrollFurther = false
 	pcall(function()
 		local remainingScroll = currentPage.AbsoluteCanvasSize.Y - currentPage.AbsoluteSize.Y - currentPage.CanvasPosition.Y
-		canScrollFurther = remainingScroll > 10
+		canScrollFurther = currentPage.AbsoluteCanvasSize.Y > currentPage.AbsoluteSize.Y + 10 and remainingScroll > 10
 	end)
+
+	if not canScrollFurther then
+		ScrollCueState.Page = nil
+		ScrollCueState.Count = 0
+		setScrollCueVisible(false)
+		return
+	end
+
+	if ScrollCueState.Page ~= currentPage then
+		ScrollCueState.Page = currentPage
+		ScrollCueState.Count = 0
+	end
+
+	ScrollCueState.Count += 1
+	if ScrollCueState.Count < 2 then
+		setScrollCueVisible(false)
+		if not ScrollCueState.Pending then
+			ScrollCueState.Pending = true
+			task.delay(0.12, function()
+				ScrollCueState.Pending = false
+				updateScrollCue()
+			end)
+		end
+		return
+	end
 
 	setScrollCueVisible(canScrollFurther)
 end
@@ -3604,6 +3639,7 @@ function RayfieldLibrary:CreateWindow(Settings)
 	end
 
 	local function jumpToWindowPage(TargetPage)
+		hideScrollCueNow()
 		for _, Page in ipairs(Elements:GetChildren()) do
 			if Page ~= TargetPage then
 				setTransitionSlidersVisible(Page, false)
