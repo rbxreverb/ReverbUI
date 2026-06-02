@@ -3470,6 +3470,7 @@ function RayfieldLibrary:CreateWindow(Settings)
 
 	Topbar.Visible = false
 	Elements.Visible = false
+	TabList.Visible = false
 	stabilizeLoadingLayout()
 	LoadingFrame.Visible = true
 
@@ -5450,7 +5451,6 @@ function RayfieldLibrary:CreateWindow(Settings)
 
 		if not success then warn('ReverbLib had an issue creating settings.') end
 
-		Elements.Visible = true
 		task.wait(0.2)
 		TweenService:Create(Main, TweenInfo.new(0.7, Enum.EasingStyle.Exponential, Enum.EasingDirection.InOut), {Size = UDim2.new(0, 260, 0, 180)}):Play()
 		task.wait(0.3)
@@ -5474,6 +5474,8 @@ function RayfieldLibrary:CreateWindow(Settings)
 			end
 		end
 		task.wait(0.1)
+		LoadingFrame.Visible = false
+		hideScrollCueNow()
 		TweenService:Create(Main, TweenInfo.new(0.6, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out), {Size = getExpandedMainSize()}):Play()
 		TweenService:Create(Main.Shadow.Image, TweenInfo.new(0.5, Enum.EasingStyle.Exponential), {ImageTransparency = 0.6}):Play()
 
@@ -5495,6 +5497,8 @@ function RayfieldLibrary:CreateWindow(Settings)
 
 		task.wait(0.5)
 		Topbar.Visible = true
+		TabList.Visible = true
+		Elements.Visible = true
 		TweenService:Create(Topbar, TweenInfo.new(0.7, Enum.EasingStyle.Exponential), {BackgroundTransparency = 0}):Play()
 		TweenService:Create(Topbar.CornerRepair, TweenInfo.new(0.7, Enum.EasingStyle.Exponential), {BackgroundTransparency = 0}):Play()
 		setLogoGlowTransparency(0.76, 0.45, 0.7)
