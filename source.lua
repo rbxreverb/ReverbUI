@@ -139,6 +139,7 @@ local settingsTable = {
 	Notifications = {
 		notificationDuration = {Type = 'dropdown', Value = 'Medium (5s)', Name = 'Notification Duration', Options = {'Short (3s)', 'Medium (5s)', 'Long (8s)'}, Order = 10},
 		notificationPosition = {Type = 'dropdown', Value = 'Top Right', Name = 'Notification Position', Options = {'Top Right', 'Top Left', 'Bottom Right', 'Bottom Left'}, Order = 20},
+		notificationBackground = {Type = 'dropdown', Value = 'Transparent', Name = 'Notification Background', Options = {'Transparent', 'Solid'}, Order = 30},
 	},
 	Search = {
 		searchScope = {Type = 'hidden', Value = 'All Tabs + Panels', Name = 'Search Scope', Options = {'All Tabs + Panels'}, Order = 10},
@@ -147,7 +148,8 @@ local settingsTable = {
 		statsOverlay = {Type = 'toggle', Value = false, Name = 'Show Performance Overlay', Order = 10},
 		statsShowFPS = {Type = 'toggle', Value = true, Name = 'Show FPS', Order = 20},
 		statsShowPing = {Type = 'toggle', Value = true, Name = 'Show Ping', Order = 30},
-		statsPosition = {Type = 'dropdown', Value = 'Top Right', Name = 'Overlay Position', Options = {'Top Right', 'Top Left', 'Bottom Right', 'Bottom Left'}, Order = 40},
+		statsShowTPS = {Type = 'toggle', Value = true, Name = 'Show TPS', Order = 40},
+		statsPosition = {Type = 'dropdown', Value = 'Top Right', Name = 'Overlay Position', Options = {'Top Right', 'Top Left', 'Bottom Right', 'Bottom Left'}, Order = 50},
 	},
 	Config = {
 		autoLoadSavedConfig = {Type = 'toggle', Value = false, Name = 'Remember Last Config', Order = 10},
@@ -959,7 +961,7 @@ local Notifications = Rayfield.Notifications
 local keybindConnections = {} -- For storing keybind connections to disconnect when Rayfield is destroyed
 
 local SelectedTheme = RayfieldLibrary.Theme.Reverb
-local PerformanceStats = {FPS = 0, Ping = 0}
+local PerformanceStats = {FPS = 0, Ping = 0, TPS = 0, TickCount = 0}
 local StatsOverlay = nil
 local StatsOverlayText = nil
 local StatsParagraph = nil
@@ -1667,6 +1669,9 @@ local function formatPerformanceStats()
 	if getSetting("Performance", "statsShowPing") ~= false then
 		table.insert(parts, "Ping: "..tostring(PerformanceStats.Ping).." ms")
 	end
+	if getSetting("Performance", "statsShowTPS") ~= false then
+		table.insert(parts, "TPS: "..tostring(PerformanceStats.TPS))
+	end
 	if #parts == 0 then
 		return "Performance overlay is hidden"
 	end
@@ -1893,7 +1898,11 @@ local function applyStatsOverlayLayout()
 	end
 
 	local position = getSetting("Performance", "statsPosition") or "Top Right"
-	local width = 170
+	local metricCount = 0
+	if getSetting("Performance", "statsShowFPS") ~= false then metricCount += 1 end
+	if getSetting("Performance", "statsShowPing") ~= false then metricCount += 1 end
+	if getSetting("Performance", "statsShowTPS") ~= false then metricCount += 1 end
+	local width = metricCount >= 3 and 230 or (metricCount == 2 and 175 or 120)
 	local height = 34
 
 	StatsOverlay.Size = UDim2.new(0, width, 0, height)
@@ -1928,7 +1937,7 @@ end
 
 setStatsOverlayVisible = function(visible)
 	ensureStatsOverlay()
-	local canShow = visible and (getSetting("Performance", "statsShowFPS") ~= false or getSetting("Performance", "statsShowPing") ~= false)
+	local canShow = visible and (getSetting("Performance", "statsShowFPS") ~= false or getSetting("Performance", "statsShowPing") ~= false or getSetting("Performance", "statsShowTPS") ~= false)
 	StatsOverlay.Visible = canShow and true or false
 	applyStatsOverlayLayout()
 	updateStatsText()
@@ -1937,17 +1946,23 @@ end
 local frameCount = 0
 local elapsed = 0
 local statsUpdateInterval = 0.25
+RunService.Heartbeat:Connect(function()
+	PerformanceStats.TickCount += 1
+end)
+
 RunService.RenderStepped:Connect(function(deltaTime)
 	frameCount += 1
 	elapsed += deltaTime
 	if elapsed >= statsUpdateInterval then
 		PerformanceStats.FPS = math.floor(frameCount / elapsed + 0.5)
+		PerformanceStats.TPS = math.floor(PerformanceStats.TickCount / elapsed + 0.5)
 		local ping = 0
 		pcall(function()
 			ping = math.floor(Players.LocalPlayer:GetNetworkPing() * 1000 + 0.5)
 		end)
 		PerformanceStats.Ping = ping
 		frameCount = 0
+		PerformanceStats.TickCount = 0
 		elapsed = 0
 		updateStatsText()
 		updateScrollCue()
@@ -2729,6 +2744,7 @@ function RayfieldLibrary:Notify(data) -- action e.g open messages
 		-- Calculate textbounds and set initial values
 		local bounds = {newNotification.Title.TextBounds.Y, newNotification.Description.TextBounds.Y}
 		newNotification.Size = UDim2.new(1, -60, 0, -Notifications:FindFirstChild("UIListLayout").Padding.Offset)
+		local solidNotification = getSetting("Notifications", "notificationBackground") == "Solid"
 
 		newNotification.Icon.Size = UDim2.new(0, 32, 0, 32)
 		newNotification.Icon.Position = UDim2.new(0, 20, 0.5, 0)
@@ -2736,7 +2752,7 @@ function RayfieldLibrary:Notify(data) -- action e.g open messages
 		TweenService:Create(newNotification, getTweenInfo(0.6, Enum.EasingStyle.Exponential), {Size = UDim2.new(1, 0, 0, math.max(bounds[1] + bounds[2] + 31, 60))}):Play()
 
 		task.wait(0.15)
-		TweenService:Create(newNotification, TweenInfo.new(0.4, Enum.EasingStyle.Exponential), {BackgroundTransparency = 0.45}):Play()
+		TweenService:Create(newNotification, TweenInfo.new(0.4, Enum.EasingStyle.Exponential), {BackgroundTransparency = solidNotification and 0 or 0.45}):Play()
 		TweenService:Create(newNotification.Title, getTweenInfo(0.3, Enum.EasingStyle.Exponential), {TextTransparency = 0}):Play()
 
 		task.wait(0.05)
@@ -2745,8 +2761,8 @@ function RayfieldLibrary:Notify(data) -- action e.g open messages
 
 		task.wait(0.05)
 		TweenService:Create(newNotification.Description, getTweenInfo(0.3, Enum.EasingStyle.Exponential), {TextTransparency = 0.35}):Play()
-		TweenService:Create(newNotification.UIStroke, TweenInfo.new(0.4, Enum.EasingStyle.Exponential), {Transparency = 0.72}):Play()
-		TweenService:Create(newNotification.Shadow, getTweenInfo(0.3, Enum.EasingStyle.Exponential), {ImageTransparency = 0.82}):Play()
+		TweenService:Create(newNotification.UIStroke, TweenInfo.new(0.4, Enum.EasingStyle.Exponential), {Transparency = solidNotification and 0.35 or 0.72}):Play()
+		TweenService:Create(newNotification.Shadow, getTweenInfo(0.3, Enum.EasingStyle.Exponential), {ImageTransparency = solidNotification and 0.72 or 0.82}):Play()
 
 		local waitDuration = math.min(math.max((#newNotification.Description.Text * 0.1) + 2.5, 3), 10)
 		task.wait(getNotificationDuration(data.Duration, waitDuration))
