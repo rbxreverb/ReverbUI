@@ -5452,8 +5452,6 @@ function RayfieldLibrary:CreateWindow(Settings)
 		if not success then warn('ReverbLib had an issue creating settings.') end
 
 		task.wait(0.2)
-		TweenService:Create(Main, TweenInfo.new(0.7, Enum.EasingStyle.Exponential, Enum.EasingDirection.InOut), {Size = UDim2.new(0, 260, 0, 180)}):Play()
-		task.wait(0.3)
 		TweenService:Create(LoadingFrame.Title, TweenInfo.new(0.2, Enum.EasingStyle.Exponential), {TextTransparency = 1}):Play()
 		TweenService:Create(LoadingFrame.Subtitle, TweenInfo.new(0.2, Enum.EasingStyle.Exponential), {TextTransparency = 1}):Play()
 		TweenService:Create(LoadingFrame.Version, TweenInfo.new(0.2, Enum.EasingStyle.Exponential), {TextTransparency = 1}):Play()
@@ -5473,8 +5471,12 @@ function RayfieldLibrary:CreateWindow(Settings)
 				TweenService:Create(dotStroke, TweenInfo.new(0.2, Enum.EasingStyle.Exponential), {Transparency = 1}):Play()
 			end
 		end
-		task.wait(0.1)
+		task.wait(0.25)
 		LoadingFrame.Visible = false
+		if LoadingLogo then LoadingLogo.ImageTransparency = 1 end
+		if LoadingBar then LoadingBar.BackgroundTransparency = 1 end
+		if LoadingBarFill then LoadingBarFill.BackgroundTransparency = 1 end
+		if LoadingBarDot then LoadingBarDot.BackgroundTransparency = 1 end
 		hideScrollCueNow()
 		TweenService:Create(Main, TweenInfo.new(0.6, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out), {Size = getExpandedMainSize()}):Play()
 		TweenService:Create(Main.Shadow.Image, TweenInfo.new(0.5, Enum.EasingStyle.Exponential), {ImageTransparency = 0.6}):Play()
