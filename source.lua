@@ -5472,14 +5472,20 @@ function RayfieldLibrary:CreateWindow(Settings)
 			end
 		end
 		task.wait(0.25)
+		TweenService:Create(Main, TweenInfo.new(0.18, Enum.EasingStyle.Exponential), {BackgroundTransparency = 1}):Play()
+		TweenService:Create(Main.Shadow.Image, TweenInfo.new(0.18, Enum.EasingStyle.Exponential), {ImageTransparency = 1}):Play()
+		task.wait(0.2)
 		LoadingFrame.Visible = false
 		if LoadingLogo then LoadingLogo.ImageTransparency = 1 end
 		if LoadingBar then LoadingBar.BackgroundTransparency = 1 end
 		if LoadingBarFill then LoadingBarFill.BackgroundTransparency = 1 end
 		if LoadingBarDot then LoadingBarDot.BackgroundTransparency = 1 end
 		hideScrollCueNow()
-		TweenService:Create(Main, TweenInfo.new(0.6, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out), {Size = getExpandedMainSize()}):Play()
-		TweenService:Create(Main.Shadow.Image, TweenInfo.new(0.5, Enum.EasingStyle.Exponential), {ImageTransparency = 0.6}):Play()
+		Main.Size = getExpandedMainSize()
+		Main.BackgroundTransparency = 1
+		Main.Shadow.Image.ImageTransparency = 1
+		TweenService:Create(Main, TweenInfo.new(0.3, Enum.EasingStyle.Exponential), {BackgroundTransparency = 0}):Play()
+		TweenService:Create(Main.Shadow.Image, TweenInfo.new(0.3, Enum.EasingStyle.Exponential), {ImageTransparency = 0.6}):Play()
 
 		Topbar.BackgroundTransparency = 1
 		Topbar.Divider.Size = UDim2.new(0, 0, 0, 1)
