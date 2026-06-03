@@ -974,6 +974,7 @@ local FooterSpacerName = "ReverbFooterSpacer"
 local footerReady = false
 local ScrollCue = nil
 local scrollCueVisible = false
+local scrollCueAllowedAt = 0
 local ScrollCueState = {Page = nil, Count = 0, Pending = false}
 local ThemeLogoGlow = nil
 local MainUIScale = nil
@@ -2169,6 +2170,13 @@ end
 
 updateScrollCue = function()
 	if not footerReady or Hidden or Minimised or searchOpen or not Main.Visible or not Elements.Visible then
+		ScrollCueState.Page = nil
+		ScrollCueState.Count = 0
+		setScrollCueVisible(false)
+		return
+	end
+
+	if os.clock() < scrollCueAllowedAt then
 		ScrollCueState.Page = nil
 		ScrollCueState.Count = 0
 		setScrollCueVisible(false)
@@ -3382,6 +3390,7 @@ function RayfieldLibrary:CreateWindow(Settings)
 	if getgenv then getgenv().reverbLibCached = true end
 	AccountInfo = resolveAccountInfo(Settings)
 	footerReady = false
+	scrollCueAllowedAt = os.clock() + 4
 
 	if not correctBuild and not Settings.DisableBuildWarnings then
 		task.delay(3, 
@@ -3557,6 +3566,12 @@ function RayfieldLibrary:CreateWindow(Settings)
 	if not Rayfield:FindFirstChild("ReverbUI_Loaded") then
 		local marker = Instance.new("BoolValue")
 		marker.Name = "ReverbUI_Loaded"
+		marker.Value = true
+		marker.Parent = Rayfield
+	end
+	if not Rayfield:FindFirstChild("FluentRenewed_ReverbUI_Loaded") then
+		local marker = Instance.new("BoolValue")
+		marker.Name = "FluentRenewed_ReverbUI_Loaded"
 		marker.Value = true
 		marker.Parent = Rayfield
 	end
