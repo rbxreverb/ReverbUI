@@ -3470,7 +3470,6 @@ function RayfieldLibrary:CreateWindow(Settings)
 
 	Topbar.Visible = false
 	Elements.Visible = false
-	TabList.Visible = false
 	stabilizeLoadingLayout()
 	LoadingFrame.Visible = true
 
@@ -5433,6 +5432,81 @@ function RayfieldLibrary:CreateWindow(Settings)
 		return changelogTab
 	end
 
+	Elements.Visible = true
+
+	task.wait(1.1)
+	TweenService:Create(Main, TweenInfo.new(0.7, Enum.EasingStyle.Exponential, Enum.EasingDirection.InOut), {Size = UDim2.new(0, 260, 0, 180)}):Play()
+	task.wait(0.3)
+	TweenService:Create(LoadingFrame.Title, TweenInfo.new(0.2, Enum.EasingStyle.Exponential), {TextTransparency = 1}):Play()
+	TweenService:Create(LoadingFrame.Subtitle, TweenInfo.new(0.2, Enum.EasingStyle.Exponential), {TextTransparency = 1}):Play()
+	TweenService:Create(LoadingFrame.Version, TweenInfo.new(0.2, Enum.EasingStyle.Exponential), {TextTransparency = 1}):Play()
+	if LoadingLogo then
+		TweenService:Create(LoadingLogo, TweenInfo.new(0.2, Enum.EasingStyle.Exponential), {ImageTransparency = 1}):Play()
+	end
+	if LoadingBar then
+		TweenService:Create(LoadingBar, TweenInfo.new(0.2, Enum.EasingStyle.Exponential), {BackgroundTransparency = 1}):Play()
+	end
+	if LoadingBarFill then
+		TweenService:Create(LoadingBarFill, TweenInfo.new(0.2, Enum.EasingStyle.Exponential), {BackgroundTransparency = 1}):Play()
+	end
+	if LoadingBarDot then
+		TweenService:Create(LoadingBarDot, TweenInfo.new(0.2, Enum.EasingStyle.Exponential), {BackgroundTransparency = 1}):Play()
+		local dotStroke = LoadingBarDot:FindFirstChild("GlowStroke")
+		if dotStroke then
+			TweenService:Create(dotStroke, TweenInfo.new(0.2, Enum.EasingStyle.Exponential), {Transparency = 1}):Play()
+		end
+	end
+	task.wait(0.1)
+	TweenService:Create(Main, TweenInfo.new(0.6, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out), {Size = getExpandedMainSize()}):Play()
+	TweenService:Create(Main.Shadow.Image, TweenInfo.new(0.5, Enum.EasingStyle.Exponential), {ImageTransparency = 0.6}):Play()
+
+	Topbar.BackgroundTransparency = 1
+	Topbar.Divider.Size = UDim2.new(0, 0, 0, 1)
+	Topbar.Divider.BackgroundColor3 = themeColor("Divider", SelectedTheme.ElementStroke)
+	Topbar.CornerRepair.BackgroundTransparency = 1
+	Topbar.Title.TextTransparency = 1
+	Topbar.Search.ImageTransparency = 1
+	if Topbar:FindFirstChild('Account') then
+		Topbar.Account.ImageTransparency = 1
+	end
+	if Topbar:FindFirstChild('Settings') then
+		Topbar.Settings.ImageTransparency = 1
+	end
+	Topbar.ChangeSize.ImageTransparency = 1
+	Topbar.Hide.ImageTransparency = 1
+	setLogoGlowTransparency(1, 1)
+
+	task.wait(0.5)
+	Topbar.Visible = true
+	TweenService:Create(Topbar, TweenInfo.new(0.7, Enum.EasingStyle.Exponential), {BackgroundTransparency = 0}):Play()
+	TweenService:Create(Topbar.CornerRepair, TweenInfo.new(0.7, Enum.EasingStyle.Exponential), {BackgroundTransparency = 0}):Play()
+	setLogoGlowTransparency(0.76, 0.45, 0.7)
+	task.wait(0.1)
+	TweenService:Create(Topbar.Divider, TweenInfo.new(1, Enum.EasingStyle.Exponential), {Size = UDim2.new(1, 0, 0, 1)}):Play()
+	TweenService:Create(Topbar.Title, TweenInfo.new(0.6, Enum.EasingStyle.Exponential), {TextTransparency = 0}):Play()
+	task.wait(0.05)
+	TweenService:Create(Topbar.Search, TweenInfo.new(0.6, Enum.EasingStyle.Exponential), {ImageTransparency = 0.8}):Play()
+	task.wait(0.05)
+	if Topbar:FindFirstChild('Account') then
+		TweenService:Create(Topbar.Account, TweenInfo.new(0.6, Enum.EasingStyle.Exponential), {ImageTransparency = 0.8}):Play()
+		task.wait(0.05)
+	end
+	if Topbar:FindFirstChild('Settings') then
+		TweenService:Create(Topbar.Settings, TweenInfo.new(0.6, Enum.EasingStyle.Exponential), {ImageTransparency = 0.8}):Play()
+		task.wait(0.05)
+	end
+	TweenService:Create(Topbar.ChangeSize, TweenInfo.new(0.6, Enum.EasingStyle.Exponential), {ImageTransparency = 0.8}):Play()
+	task.wait(0.05)
+	TweenService:Create(Topbar.Hide, TweenInfo.new(0.6, Enum.EasingStyle.Exponential), {ImageTransparency = 0.8}):Play()
+	task.wait(0.3)
+
+	if dragBar then
+		TweenService:Create(dragBarCosmetic, TweenInfo.new(0.6, Enum.EasingStyle.Exponential), {BackgroundTransparency = 0.7}):Play()
+	end
+	footerReady = true
+	refreshFooterVisibility(true)
+	task.delay(0.45, updateScrollCue)
+
 	function Window.ModifyTheme(NewTheme)
 		local success = pcall(ChangeTheme, NewTheme)
 		if not success then
@@ -5442,100 +5516,12 @@ function RayfieldLibrary:CreateWindow(Settings)
 		end
 	end
 
-	task.spawn(function()
-		task.wait(1.1)
-		local success = pcall(function()
-			createAccount(Window)
-			createSettings(Window)
-		end)
-
-		if not success then warn('ReverbLib had an issue creating settings.') end
-
-		task.wait(0.2)
-		TweenService:Create(LoadingFrame.Title, TweenInfo.new(0.2, Enum.EasingStyle.Exponential), {TextTransparency = 1}):Play()
-		TweenService:Create(LoadingFrame.Subtitle, TweenInfo.new(0.2, Enum.EasingStyle.Exponential), {TextTransparency = 1}):Play()
-		TweenService:Create(LoadingFrame.Version, TweenInfo.new(0.2, Enum.EasingStyle.Exponential), {TextTransparency = 1}):Play()
-		if LoadingLogo then
-			TweenService:Create(LoadingLogo, TweenInfo.new(0.2, Enum.EasingStyle.Exponential), {ImageTransparency = 1}):Play()
-		end
-		if LoadingBar then
-			TweenService:Create(LoadingBar, TweenInfo.new(0.2, Enum.EasingStyle.Exponential), {BackgroundTransparency = 1}):Play()
-		end
-		if LoadingBarFill then
-			TweenService:Create(LoadingBarFill, TweenInfo.new(0.2, Enum.EasingStyle.Exponential), {BackgroundTransparency = 1}):Play()
-		end
-		if LoadingBarDot then
-			TweenService:Create(LoadingBarDot, TweenInfo.new(0.2, Enum.EasingStyle.Exponential), {BackgroundTransparency = 1}):Play()
-			local dotStroke = LoadingBarDot:FindFirstChild("GlowStroke")
-			if dotStroke then
-				TweenService:Create(dotStroke, TweenInfo.new(0.2, Enum.EasingStyle.Exponential), {Transparency = 1}):Play()
-			end
-		end
-		task.wait(0.25)
-		TweenService:Create(Main, TweenInfo.new(0.18, Enum.EasingStyle.Exponential), {BackgroundTransparency = 1}):Play()
-		TweenService:Create(Main.Shadow.Image, TweenInfo.new(0.18, Enum.EasingStyle.Exponential), {ImageTransparency = 1}):Play()
-		task.wait(0.2)
-		LoadingFrame.Visible = false
-		if LoadingLogo then LoadingLogo.ImageTransparency = 1 end
-		if LoadingBar then LoadingBar.BackgroundTransparency = 1 end
-		if LoadingBarFill then LoadingBarFill.BackgroundTransparency = 1 end
-		if LoadingBarDot then LoadingBarDot.BackgroundTransparency = 1 end
-		hideScrollCueNow()
-		Main.Size = getExpandedMainSize()
-		Main.BackgroundTransparency = 1
-		Main.Shadow.Image.ImageTransparency = 1
-		TweenService:Create(Main, TweenInfo.new(0.3, Enum.EasingStyle.Exponential), {BackgroundTransparency = 0}):Play()
-		TweenService:Create(Main.Shadow.Image, TweenInfo.new(0.3, Enum.EasingStyle.Exponential), {ImageTransparency = 0.6}):Play()
-
-		Topbar.BackgroundTransparency = 1
-		Topbar.Divider.Size = UDim2.new(0, 0, 0, 1)
-		Topbar.Divider.BackgroundColor3 = themeColor("Divider", SelectedTheme.ElementStroke)
-		Topbar.CornerRepair.BackgroundTransparency = 1
-		Topbar.Title.TextTransparency = 1
-		Topbar.Search.ImageTransparency = 1
-		if Topbar:FindFirstChild('Account') then
-			Topbar.Account.ImageTransparency = 1
-		end
-		if Topbar:FindFirstChild('Settings') then
-			Topbar.Settings.ImageTransparency = 1
-		end
-		Topbar.ChangeSize.ImageTransparency = 1
-		Topbar.Hide.ImageTransparency = 1
-		setLogoGlowTransparency(1, 1)
-
-		task.wait(0.5)
-		Topbar.Visible = true
-		TabList.Visible = true
-		Elements.Visible = true
-		TweenService:Create(Topbar, TweenInfo.new(0.7, Enum.EasingStyle.Exponential), {BackgroundTransparency = 0}):Play()
-		TweenService:Create(Topbar.CornerRepair, TweenInfo.new(0.7, Enum.EasingStyle.Exponential), {BackgroundTransparency = 0}):Play()
-		setLogoGlowTransparency(0.76, 0.45, 0.7)
-		task.wait(0.1)
-		TweenService:Create(Topbar.Divider, TweenInfo.new(1, Enum.EasingStyle.Exponential), {Size = UDim2.new(1, 0, 0, 1)}):Play()
-		TweenService:Create(Topbar.Title, TweenInfo.new(0.6, Enum.EasingStyle.Exponential), {TextTransparency = 0}):Play()
-		task.wait(0.05)
-		TweenService:Create(Topbar.Search, TweenInfo.new(0.6, Enum.EasingStyle.Exponential), {ImageTransparency = 0.8}):Play()
-		task.wait(0.05)
-		if Topbar:FindFirstChild('Account') then
-			TweenService:Create(Topbar.Account, TweenInfo.new(0.6, Enum.EasingStyle.Exponential), {ImageTransparency = 0.8}):Play()
-			task.wait(0.05)
-		end
-		if Topbar:FindFirstChild('Settings') then
-			TweenService:Create(Topbar.Settings, TweenInfo.new(0.6, Enum.EasingStyle.Exponential), {ImageTransparency = 0.8}):Play()
-			task.wait(0.05)
-		end
-		TweenService:Create(Topbar.ChangeSize, TweenInfo.new(0.6, Enum.EasingStyle.Exponential), {ImageTransparency = 0.8}):Play()
-		task.wait(0.05)
-		TweenService:Create(Topbar.Hide, TweenInfo.new(0.6, Enum.EasingStyle.Exponential), {ImageTransparency = 0.8}):Play()
-		task.wait(0.3)
-
-		if dragBar then
-			TweenService:Create(dragBarCosmetic, TweenInfo.new(0.6, Enum.EasingStyle.Exponential), {BackgroundTransparency = 0.7}):Play()
-		end
-		footerReady = true
-		refreshFooterVisibility(true)
-		task.delay(0.15, updateScrollCue)
+	local success = pcall(function()
+		createAccount(Window)
+		createSettings(Window)
 	end)
+
+	if not success then warn('ReverbLib had an issue creating settings.') end
 
 	return Window
 end
