@@ -284,7 +284,7 @@ local function loadSettings()
 
 	if not success then 
 		if writefile then
-			warn('ReverbLib had an issue accessing configuration saving capability.')
+			warn('Reverb had an issue accessing configuration saving capability.')
 		end
 	end
 end
@@ -797,7 +797,7 @@ elseif not useStudio then
 end
 
 if secureMode and not customAssetId then
-	secureNotify("default_asset", "Secure Mode", "You are using the default ReverbLib asset ID. Set REVERBLIB_ASSET_ID to a custom upload if you want a fully self-owned interface asset.")
+	secureNotify("default_asset", "Secure Mode", "You are using the default Reverb asset ID. Set a custom upload if you want a fully self-owned interface asset.")
 end
 
 do
@@ -875,10 +875,10 @@ do
 
 		if not ok then
 			warn("ReverbLib | Failed to load custom assets: "..tostring(err))
-			secureNotify("asset_load_fail", "ReverbLib", "Failed to load custom assets. UI images may not display correctly.")
+			secureNotify("asset_load_fail", "Reverb", "Failed to load custom assets. UI images may not display correctly.")
 		end
 	else
-		secureNotify("no_getcustomasset", "ReverbLib", "Your environment does not support getcustomasset. Some UI images may not render correctly.")
+		secureNotify("no_getcustomasset", "Reverb", "Your environment does not support getcustomasset. Some UI images may not render correctly.")
 	end
 
 
@@ -2382,7 +2382,7 @@ function ConfigHelpers.Load(Configuration, suppressMissingWarnings)
 	local success, Data = pcall(function() return HttpService:JSONDecode(Configuration) end)
 	local changed
 
-	if not success then warn('ReverbLib had an issue decoding the configuration file, please try deleting the file and reopening ReverbLib.') return end
+	if not success then warn('Reverb had an issue decoding the configuration file, please try deleting the file and reopening Reverb.') return end
 
 	-- Iterate through current UI elements' flags
 	for FlagName, Flag in pairs(RayfieldLibrary.Flags) do
@@ -3395,7 +3395,7 @@ function RayfieldLibrary:CreateWindow(Settings)
 	if not correctBuild and not Settings.DisableBuildWarnings then
 		task.delay(3, 
 			function() 
-				RayfieldLibrary:Notify({Title = 'Build Mismatch', Content = 'ReverbLib may encounter issues as you are running an incompatible interface version ('.. ((Rayfield:FindFirstChild('Build') and Rayfield.Build.Value) or 'No Build') ..').\n\nThis version of ReverbLib is intended for interface build '..InterfaceBuild..'.\n\nTry rejoining and then run the script twice.', Image = 4335487866, Duration = 15})		
+				RayfieldLibrary:Notify({Title = 'Build Mismatch', Content = 'Reverb may encounter issues because this interface version is incompatible ('.. ((Rayfield:FindFirstChild('Build') and Rayfield.Build.Value) or 'No Build') ..').\n\nThis Reverb build expects interface build '..InterfaceBuild..'.\n\nTry rejoining and then run the script twice.', Image = 4335487866, Duration = 15})
 			end)
 	end
 
@@ -3488,8 +3488,8 @@ function RayfieldLibrary:CreateWindow(Settings)
 				task.wait(math.random(180, 600))
 				if rayfieldDestroyed then break end
 				RayfieldLibrary:Notify({
-					Title = "ReverbLib Interface",
-					Content = "ReverbLib is running.",
+					Title = "Reverb",
+					Content = "Reverb is running.",
 					Duration = 7,
 					Image = 4370033185,
 				})
@@ -3825,7 +3825,7 @@ function RayfieldLibrary:CreateWindow(Settings)
 					TweenService:Create(Button.UIStroke, TweenInfo.new(0.6, Enum.EasingStyle.Exponential), {Transparency = 1}):Play()
 					Button.Title.Text = "Callback Error"
 					print("ReverbLib | "..ButtonSettings.Name.." Callback Error " ..tostring(Response))
-					warn('Check the ReverbLib documentation for help with this UI library.')
+					warn('Check the Reverb documentation for help with this UI library.')
 					task.wait(0.5)
 					Button.Title.Text = ButtonSettings.Name
 					TweenService:Create(Button, TweenInfo.new(0.6, Enum.EasingStyle.Exponential), {BackgroundColor3 = SelectedTheme.ElementBackground}):Play()
@@ -4317,7 +4317,7 @@ function RayfieldLibrary:CreateWindow(Settings)
 					TweenService:Create(Input.UIStroke, TweenInfo.new(0.6, Enum.EasingStyle.Exponential), {Transparency = 1}):Play()
 					Input.Title.Text = "Callback Error"
 					print("ReverbLib | "..InputSettings.Name.." Callback Error " ..tostring(Response))
-					warn('Check the ReverbLib documentation for help with this UI library.')
+					warn('Check the Reverb documentation for help with this UI library.')
 					task.wait(0.5)
 					Input.Title.Text = InputSettings.Name
 					TweenService:Create(Input, TweenInfo.new(0.6, Enum.EasingStyle.Exponential), {BackgroundColor3 = SelectedTheme.ElementBackground}):Play()
@@ -4557,7 +4557,7 @@ function RayfieldLibrary:CreateWindow(Settings)
 							TweenService:Create(Dropdown.UIStroke, TweenInfo.new(0.6, Enum.EasingStyle.Exponential), {Transparency = 1}):Play()
 							Dropdown.Title.Text = "Callback Error"
 							print("ReverbLib | "..DropdownSettings.Name.." Callback Error " ..tostring(Response))
-							warn('Check the ReverbLib documentation for help with this UI library.')
+							warn('Check the Reverb documentation for help with this UI library.')
 							task.wait(0.5)
 							Dropdown.Title.Text = DropdownSettings.Name
 							TweenService:Create(Dropdown, TweenInfo.new(0.6, Enum.EasingStyle.Exponential), {BackgroundColor3 = SelectedTheme.ElementBackground}):Play()
@@ -4647,7 +4647,7 @@ function RayfieldLibrary:CreateWindow(Settings)
 					TweenService:Create(Dropdown.UIStroke, TweenInfo.new(0.6, Enum.EasingStyle.Exponential), {Transparency = 1}):Play()
 					Dropdown.Title.Text = "Callback Error"
 					print("ReverbLib | "..DropdownSettings.Name.." Callback Error " ..tostring(Response))
-					warn('Check the ReverbLib documentation for help with this UI library.')
+					warn('Check the Reverb documentation for help with this UI library.')
 					task.wait(0.5)
 					Dropdown.Title.Text = DropdownSettings.Name
 					TweenService:Create(Dropdown, TweenInfo.new(0.6, Enum.EasingStyle.Exponential), {BackgroundColor3 = SelectedTheme.ElementBackground}):Play()
@@ -4792,7 +4792,7 @@ function RayfieldLibrary:CreateWindow(Settings)
 							TweenService:Create(Keybind.UIStroke, TweenInfo.new(0.6, Enum.EasingStyle.Exponential), {Transparency = 1}):Play()
 							Keybind.Title.Text = "Callback Error"
 							print("ReverbLib | "..KeybindSettings.Name.." Callback Error " ..tostring(Response))
-							warn('Check the ReverbLib documentation for help with this UI library.')
+							warn('Check the Reverb documentation for help with this UI library.')
 							task.wait(0.5)
 							Keybind.Title.Text = KeybindSettings.Name
 							TweenService:Create(Keybind, TweenInfo.new(0.6, Enum.EasingStyle.Exponential), {BackgroundColor3 = SelectedTheme.ElementBackground}):Play()
@@ -4923,7 +4923,7 @@ function RayfieldLibrary:CreateWindow(Settings)
 					TweenService:Create(Toggle.UIStroke, TweenInfo.new(0.6, Enum.EasingStyle.Exponential), {Transparency = 1}):Play()
 					Toggle.Title.Text = "Callback Error"
 					print("ReverbLib | "..ToggleSettings.Name.." Callback Error " ..tostring(Response))
-					warn('Check the ReverbLib documentation for help with this UI library.')
+					warn('Check the Reverb documentation for help with this UI library.')
 					task.wait(0.5)
 					Toggle.Title.Text = ToggleSettings.Name
 					TweenService:Create(Toggle, TweenInfo.new(0.6, Enum.EasingStyle.Exponential), {BackgroundColor3 = SelectedTheme.ElementBackground}):Play()
@@ -4973,7 +4973,7 @@ function RayfieldLibrary:CreateWindow(Settings)
 					TweenService:Create(Toggle.UIStroke, TweenInfo.new(0.6, Enum.EasingStyle.Exponential), {Transparency = 1}):Play()
 					Toggle.Title.Text = "Callback Error"
 					print("ReverbLib | "..ToggleSettings.Name.." Callback Error " ..tostring(Response))
-					warn('Check the ReverbLib documentation for help with this UI library.')
+					warn('Check the Reverb documentation for help with this UI library.')
 					task.wait(0.5)
 					Toggle.Title.Text = ToggleSettings.Name
 					TweenService:Create(Toggle, TweenInfo.new(0.6, Enum.EasingStyle.Exponential), {BackgroundColor3 = SelectedTheme.ElementBackground}):Play()
@@ -5123,7 +5123,7 @@ function RayfieldLibrary:CreateWindow(Settings)
 								TweenService:Create(Slider.UIStroke, TweenInfo.new(0.6, Enum.EasingStyle.Exponential), {Transparency = 1}):Play()
 								Slider.Title.Text = "Callback Error"
 								print("ReverbLib | "..SliderSettings.Name.." Callback Error " ..tostring(Response))
-								warn('Check the ReverbLib documentation for help with this UI library.')
+								warn('Check the Reverb documentation for help with this UI library.')
 								task.wait(0.5)
 								Slider.Title.Text = SliderSettings.Name
 								TweenService:Create(Slider, TweenInfo.new(0.6, Enum.EasingStyle.Exponential), {BackgroundColor3 = SelectedTheme.ElementBackground}):Play()
@@ -5157,7 +5157,7 @@ function RayfieldLibrary:CreateWindow(Settings)
 					TweenService:Create(Slider.UIStroke, TweenInfo.new(0.6, Enum.EasingStyle.Exponential), {Transparency = 1}):Play()
 					Slider.Title.Text = "Callback Error"
 					print("ReverbLib | "..SliderSettings.Name.." Callback Error " ..tostring(Response))
-					warn('Check the ReverbLib documentation for help with this UI library.')
+					warn('Check the Reverb documentation for help with this UI library.')
 					task.wait(0.5)
 					Slider.Title.Text = SliderSettings.Name
 					TweenService:Create(Slider, TweenInfo.new(0.6, Enum.EasingStyle.Exponential), {BackgroundColor3 = SelectedTheme.ElementBackground}):Play()
@@ -5911,15 +5911,15 @@ function RayfieldLibrary:LoadConfiguration(Options)
 				end
 			else
 				notified = true
-				RayfieldLibrary:Notify({Title = "ReverbLib Configurations", Content = "We couldn't enable Configuration Saving as you are not using software with filesystem support.", Image = 4384402990})
+				RayfieldLibrary:Notify({Title = "Reverb Config", Content = "We couldn't enable configuration saving because your executor does not support file saving.", Image = 4384402990})
 			end
 		end)
 
 		if success and loaded and not notified then
-			RayfieldLibrary:Notify({Title = "ReverbLib Configurations", Content = "The configuration file for this script has been loaded from a previous session.", Image = 4384403532})
+			RayfieldLibrary:Notify({Title = "Reverb Config", Content = "The saved config for this script has been loaded.", Image = 4384403532})
 		elseif not success and not notified then
 			warn('ReverbLib Configurations Error | '..tostring(result))
-			RayfieldLibrary:Notify({Title = "ReverbLib Configurations", Content = "We've encountered an issue loading your configuration correctly.\n\nCheck the Developer Console for more information.", Image = 4384402990})
+			RayfieldLibrary:Notify({Title = "Reverb Config", Content = "We ran into an issue loading your config.\n\nCheck the Developer Console for more information.", Image = 4384402990})
 		end
 	end
 
