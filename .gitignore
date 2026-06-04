@@ -1,4 +1,8 @@
 rayfield-original/
 brand/
+templates/
+PROJECT_HANDOFF.md
+Documentation.md
+example.lua
 .DS_Store
 Thumbs.db
