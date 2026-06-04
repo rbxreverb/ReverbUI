@@ -42,6 +42,22 @@ local SettingsTab = Window:CreateTab("Settings", "settings")
 Window:CreateConfigTab({
 	Name = "Configs",
 	Icon = "save",
+
+	-- Optional preset configs. Uncomment and edit when a game needs quick presets.
+	-- Preset keys must match your element Flag names exactly.
+	-- Dropdown values should be wrapped in a table, for example {"Default"}.
+	-- Presets = {
+	-- 	["Legit"] = {
+	-- 		[SCRIPT_ID.."_ExampleToggle"] = false,
+	-- 		[SCRIPT_ID.."_ExampleSlider"] = 16,
+	-- 		[SCRIPT_ID.."_ExampleMode"] = {"Default"},
+	-- 	},
+	-- 	["Fast"] = {
+	-- 		[SCRIPT_ID.."_ExampleToggle"] = true,
+	-- 		[SCRIPT_ID.."_ExampleSlider"] = 50,
+	-- 		[SCRIPT_ID.."_ExampleMode"] = {"Default"},
+	-- 	},
+	-- },
 })
 
 -- Optional. Keep this if the script has public updates to show.

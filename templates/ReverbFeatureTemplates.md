@@ -221,10 +221,26 @@ Only add this when the script has useful saved settings.
 Window:CreateConfigTab({
 	Name = "Configs",
 	Icon = "save",
+
+	-- Optional preset configs.
+	-- Presets = {
+	-- 	["Legit"] = {
+	-- 		[SCRIPT_ID.."_AutoFarm"] = false,
+	-- 		[SCRIPT_ID.."_WalkSpeed"] = 16,
+	-- 		[SCRIPT_ID.."_Mode"] = {"Legit"},
+	-- 	},
+	-- 	["Fast"] = {
+	-- 		[SCRIPT_ID.."_AutoFarm"] = true,
+	-- 		[SCRIPT_ID.."_WalkSpeed"] = 50,
+	-- 		[SCRIPT_ID.."_Mode"] = {"Fast"},
+	-- 	},
+	-- },
 })
 ```
 
 Remove it completely for scripts that do not need configs.
+
+Preset keys must match the feature `Flag` names exactly. Dropdown preset values should be wrapped in a table, for example `{"Legit"}`.
 
 ## Optional Changelog Tab
 
