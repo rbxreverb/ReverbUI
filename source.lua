@@ -79,7 +79,7 @@ local function loadWithTimeout(url: string, timeout: number?): ...any
 	return if success then result else nil
 end
 
-local _getgenv = rawget(_G, "getgenv")
+local _getgenv = type(getgenv) == "function" and getgenv or rawget(_G, "getgenv")
 local requestsDisabled = false
 local customAssetId = nil
 local secureMode = false
