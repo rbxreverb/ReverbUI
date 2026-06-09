@@ -1111,10 +1111,6 @@ local function resolveAccountInfo(Settings)
 	local isPremium = accountSettings.IsPremium
 
 	if type(isPremium) ~= "boolean" then
-		isPremium = readGlobal("Shared_LRM_IsUserPremium")
-	end
-
-	if type(isPremium) ~= "boolean" then
 		isPremium = userNote ~= "Ad Reward" and userNote ~= "Not specified"
 	end
 
