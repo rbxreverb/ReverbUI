@@ -924,7 +924,7 @@ local useMobilePrompt = false
 if UserInputService.TouchEnabled then
 	useMobilePrompt = true
 	settingsTable.Appearance.uiScale.Value = "80%"
-	settingsTable.Appearance.uiHeight.Value = "70%"
+	settingsTable.Appearance.uiHeight.Value = "90%"
 end
 
 
