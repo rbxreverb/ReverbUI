@@ -129,6 +129,7 @@ local ConfigurationExtension = ".rvbl"
 local settingsTable = {
 	General = {
 		rayfieldOpen = {Type = 'bind', Value = 'K', Name = 'Reverb UI Keybind', Order = 10},
+		antiAfk = {Type = 'toggle', Value = true, Name = 'Anti AFK', Order = 20},
 	},
 	Appearance = {
 		theme = {Type = 'dropdown', Value = 'Reverb', Name = 'Theme', Options = {'Reverb'}, Order = 10},
@@ -1571,6 +1572,33 @@ local function applyThemeDecor()
 	end
 end
 
+function RayfieldLibrary:_ApplyAntiAfk()
+	local enabled = getSetting("General", "antiAfk") ~= false
+	if enabled and not self._AntiAfkConnection then
+		local player = Players.LocalPlayer
+		if not player then
+			return
+		end
+
+		self._AntiAfkConnection = player.Idled:Connect(function()
+			pcall(function()
+				local virtualUser = getService("VirtualUser")
+				local currentCamera = workspace.CurrentCamera
+				if not currentCamera then
+					return
+				end
+
+				virtualUser:Button2Down(Vector2.zero, currentCamera.CFrame)
+				task.wait(1)
+				virtualUser:Button2Up(Vector2.zero, currentCamera.CFrame)
+			end)
+		end)
+	elseif not enabled and self._AntiAfkConnection then
+		self._AntiAfkConnection:Disconnect()
+		self._AntiAfkConnection = nil
+	end
+end
+
 applySettingsExperience = function()
 	applyUIScale()
 	applyWindowSize()
@@ -1583,6 +1611,7 @@ applySettingsExperience = function()
 	setStatsOverlayVisible(getSetting("Performance", "statsOverlay"))
 	updateStatsText()
 	updateScrollCue()
+	RayfieldLibrary:_ApplyAntiAfk()
 end
 
 local function ChangeTheme(Theme)
@@ -5612,6 +5641,10 @@ function RayfieldLibrary:Destroy()
 	rayfieldDestroyed = true
 	if hideHotkeyConnection then
 		hideHotkeyConnection:Disconnect()
+	end
+	if self._AntiAfkConnection then
+		self._AntiAfkConnection:Disconnect()
+		self._AntiAfkConnection = nil
 	end
 	for _, connection in keybindConnections do
 		connection:Disconnect()
