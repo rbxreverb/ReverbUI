@@ -3633,6 +3633,7 @@ function RayfieldLibrary:CreateWindow(Settings)
 
 		self._PageNavigationToken = (self._PageNavigationToken or 0) + 1
 		local navigationToken = self._PageNavigationToken
+		self._ActivePage = TargetPage
 		TargetPage.Visible = true
 		Elements.UIPageLayout:JumpTo(TargetPage)
 
@@ -3647,6 +3648,26 @@ function RayfieldLibrary:CreateWindow(Settings)
 			Elements.UIPageLayout.Animated = wasAnimated
 		end)
 	end
+
+	task.spawn(function()
+		while not rayfieldDestroyed do
+			task.wait(0.75)
+			if Main.Visible and Elements.Visible and not Hidden and not Minimised then
+				local currentPage = RayfieldLibrary._ActivePage or Elements.UIPageLayout.CurrentPage
+				if currentPage and currentPage:IsA("ScrollingFrame") then
+					local pageOffset = currentPage.AbsolutePosition - Elements.AbsolutePosition
+					if not currentPage.Visible or math.abs(pageOffset.X) > 4 or math.abs(pageOffset.Y) > 4 then
+						RayfieldLibrary:_JumpToPage(currentPage)
+					end
+
+					local maxCanvasY = math.max(0, currentPage.AbsoluteCanvasSize.Y - currentPage.AbsoluteSize.Y)
+					if currentPage.CanvasPosition.Y > maxCanvasY + 4 then
+						currentPage.CanvasPosition = Vector2.new(currentPage.CanvasPosition.X, maxCanvasY)
+					end
+				end
+			end
+		end
+	end)
 
 	-- Tab
 	local FirstTab = false
