@@ -3652,7 +3652,7 @@ function RayfieldLibrary:CreateWindow(Settings)
 	task.spawn(function()
 		while not rayfieldDestroyed do
 			task.wait(0.75)
-			if Main.Visible and Elements.Visible and not Hidden and not Minimised then
+			if footerReady and Main.Visible and Elements.Visible and not Hidden and not Minimised then
 				local currentPage = RayfieldLibrary._ActivePage or Elements.UIPageLayout.CurrentPage
 				if currentPage and currentPage:IsA("ScrollingFrame") then
 					local pageOffset = currentPage.AbsolutePosition - Elements.AbsolutePosition
