@@ -3626,6 +3626,28 @@ function RayfieldLibrary:CreateWindow(Settings)
 	end)
 	TabList.Template.Visible = false
 
+	function RayfieldLibrary:_JumpToPage(TargetPage)
+		if not TargetPage or TargetPage.Parent ~= Elements then
+			return
+		end
+
+		self._PageNavigationToken = (self._PageNavigationToken or 0) + 1
+		local navigationToken = self._PageNavigationToken
+		TargetPage.Visible = true
+		Elements.UIPageLayout:JumpTo(TargetPage)
+
+		task.delay(0.24, function()
+			if rayfieldDestroyed or self._PageNavigationToken ~= navigationToken or TargetPage.Parent ~= Elements then
+				return
+			end
+
+			local wasAnimated = Elements.UIPageLayout.Animated
+			Elements.UIPageLayout.Animated = false
+			Elements.UIPageLayout:JumpTo(TargetPage)
+			Elements.UIPageLayout.Animated = wasAnimated
+		end)
+	end
+
 	-- Tab
 	local FirstTab = false
 	local Window = {}
@@ -3661,7 +3683,7 @@ function RayfieldLibrary:CreateWindow(Settings)
 			end
 		end
 		TargetPage.Visible = true
-		Elements.UIPageLayout:JumpTo(TargetPage)
+		RayfieldLibrary:_JumpToPage(TargetPage)
 		task.delay(0.22, function()
 			for _, Page in ipairs(Elements:GetChildren()) do
 				setTransitionSlidersVisible(Page, true)
@@ -3726,7 +3748,7 @@ function RayfieldLibrary:CreateWindow(Settings)
 		updateFooterSpacers()
 		if not FirstTab and not Ext then
 			Elements.UIPageLayout.Animated = false
-			Elements.UIPageLayout:JumpTo(TabPage)
+			RayfieldLibrary:_JumpToPage(TabPage)
 			Elements.UIPageLayout.Animated = true
 		end
 
@@ -5737,7 +5759,7 @@ local function updateGlobalSearch()
 
 	if searchPage then
 		if Elements.UIPageLayout.CurrentPage ~= searchPage then
-			Elements.UIPageLayout:JumpTo(searchPage)
+			RayfieldLibrary:_JumpToPage(searchPage)
 			currentPage = searchPage
 		end
 		updateTopbarPageButtons()
@@ -5820,7 +5842,7 @@ local function openInternalTab(tabName)
 			end
 		end
 
-		Elements.UIPageLayout:JumpTo(Elements[tabName])
+		RayfieldLibrary:_JumpToPage(Elements[tabName])
 		updateTopbarPageButtons()
 	end)
 end
