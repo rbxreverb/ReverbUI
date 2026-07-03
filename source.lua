@@ -122,7 +122,7 @@ local function secureNotify(wType, title, content)
 	end)
 end
 local InterfaceBuild = 'UU2NX'
-local Release = "Build 1.746"
+local Release = "Build 1.747"
 local RayfieldFolder = "ReverbLib"
 local ConfigurationFolder = RayfieldFolder.."/Configurations"
 local ConfigurationExtension = ".rvbl"
@@ -135,7 +135,7 @@ local settingsTable = {
 		theme = {Type = 'dropdown', Value = 'Reverb', Name = 'Theme', Options = {'Reverb'}, Order = 10},
 		uiScale = {Type = 'dropdown', Value = '100%', Name = 'UI Scale', Options = {'50%', '60%', '70%', '80%', '90%', '100%', '110%', '120%', '130%', '140%', '150%'}, Order = 20},
 		uiHeight = {Type = 'dropdown', Value = '100%', Name = 'UI Vertical Size', Options = {'50%', '60%', '70%', '80%', '90%', '100%', '110%', '120%', '130%', '140%', '150%'}, Order = 30},
-		footerText = {Type = 'toggle', Value = false, Name = 'Show Script Info', Order = 40},
+		footerText = {Type = 'toggle', Value = true, Name = 'Show Script Info', Order = 40},
 	},
 	Notifications = {
 		notificationDuration = {Type = 'dropdown', Value = 'Medium (5s)', Name = 'Notification Duration', Options = {'Short (3s)', 'Medium (5s)', 'Long (8s)'}, Order = 10},
@@ -991,7 +991,6 @@ local AccountLinks = {
 	DiscordInviteCode = "TpJd6E8vKZ",
 	Blog = "https://rbxreverb.com/blog",
 	ReportBug = "https://discord.com/invite/TpJd6E8vKZ",
-	Robux = "https://www.roblox.com/games/77740070380449/",
 }
 local updateStatsText = function() end
 local updateScrollCue = function() end
@@ -1156,7 +1155,7 @@ local function formatAccountDetails()
 end
 
 local function formatPricingDetails()
-	return "1 Day       149 Robux\n7 Days      $4.99 / 699 Robux\n30 Days     $9.99 / 1249 Robux\nLifetime    $19.99 / 3199 Robux\n\nCash payments copy the Reverb Store link. Robux payments copy the automated Roblox purchase game."
+	return "30 Days     $9.99\nLifetime    $19.99\n\nPremium keys are available through the official Reverb Store."
 end
 
 local function copyLink(label, url, notifyTitle, image)
@@ -2728,6 +2727,13 @@ function ChangelogHelpers.FormatContent(entry)
 	for _, category in ipairs(ChangelogHelpers.CategoryOrder) do
 		local value = ChangelogHelpers.GetValue(entry, category.Aliases)
 		local formatted = ChangelogHelpers.FormatList(value)
+		if ChangelogHelpers.IsReleaseEntry(entry)
+			and category.Key == "Added"
+			and formatted
+			and string.lower(string.gsub(formatted, "^%- ", "")) == "release"
+		then
+			formatted = nil
+		end
 		if formatted then
 			table.insert(parts, category.Title.."\n"..formatted)
 		end
@@ -2740,10 +2746,32 @@ function ChangelogHelpers.FormatContent(entry)
 	end
 
 	if #parts == 0 then
+		if ChangelogHelpers.IsReleaseEntry(entry) then
+			return "The first version of this script is now available."
+		end
 		return "No changelog notes were provided for this update."
 	end
 
 	return table.concat(parts, "\n\n")
+end
+
+function ChangelogHelpers.IsReleaseEntry(entry)
+	local title = ChangelogHelpers.GetValue(entry, {"Title", "Name"})
+	if title then
+		local normalizedTitle = string.lower(tostring(title))
+		if normalizedTitle == "release" or normalizedTitle == "script release" then
+			return true
+		end
+	end
+
+	local added = ChangelogHelpers.GetValue(entry, {"Added", "Additions", "New"})
+	if type(added) == "string" then
+		return string.lower(added) == "release"
+	elseif type(added) == "table" and #added == 1 then
+		return string.lower(tostring(added[1])) == "release"
+	end
+
+	return false
 end
 
 function ChangelogHelpers.SetParagraphVisible(paragraph, visible)
@@ -2753,14 +2781,20 @@ function ChangelogHelpers.SetParagraphVisible(paragraph, visible)
 end
 
 function ChangelogHelpers.FormatTitle(entry)
-	local version = ChangelogHelpers.GetValue(entry, {"Version", "Name", "Title"}) or "Update"
+	local version = ChangelogHelpers.GetValue(entry, {"Version", "Name"}) or "Update"
+	local title = ChangelogHelpers.GetValue(entry, {"Title"})
 	local date = ChangelogHelpers.GetValue(entry, {"Date", "Released", "ReleaseDate"})
+	local formattedTitle = tostring(version)
 
-	if date and tostring(date) ~= "" then
-		return tostring(version).." - "..tostring(date)
+	if title and tostring(title) ~= "" and tostring(title) ~= tostring(version) then
+		formattedTitle = formattedTitle.." - "..tostring(title)
 	end
 
-	return tostring(version)
+	if date and tostring(date) ~= "" then
+		return formattedTitle.." ("..tostring(date)..")"
+	end
+
+	return formattedTitle
 end
 
 function RayfieldLibrary:Notify(data) -- action e.g open messages
@@ -3273,16 +3307,9 @@ local function createAccount(window)
 	})
 
 	newTab:CreateButton({
-		Name = "Copy Cash Payment Link",
+		Name = "Copy Premium Store Link",
 		Callback = function()
 			copyAccountLink("Store", AccountLinks.Premium)
-		end,
-	})
-
-	newTab:CreateButton({
-		Name = "Copy Robux Payment Link",
-		Callback = function()
-			copyAccountLink("Robux Purchase Game", AccountLinks.Robux)
 		end,
 	})
 end
@@ -5485,24 +5512,25 @@ function RayfieldLibrary:CreateWindow(Settings)
 			for index, entry in ipairs(entries) do
 				local isLatest = index == 1
 				local expanded = isLatest
-				local rowName = (isLatest and "Latest - " or "")..ChangelogHelpers.FormatTitle(entry)
+				local rowName = (isLatest and "Latest: " or "")..ChangelogHelpers.FormatTitle(entry)
 				local details
 				local toggleButton
 
 				toggleButton = changelogTab:CreateButton({
-					Name = (expanded and "Hide " or "View ")..rowName,
+					Name = (expanded and "Hide Details: " or "View Details: ")..rowName,
 					Ext = true,
 					Callback = function()
 						expanded = not expanded
 						ChangelogHelpers.SetParagraphVisible(details, expanded)
 						if toggleButton and toggleButton.Set then
-							toggleButton:Set((expanded and "Hide " or "View ")..rowName)
+							toggleButton:Set((expanded and "Hide Details: " or "View Details: ")..rowName)
 						end
 					end,
 				})
 
 				details = changelogTab:CreateParagraph({
-					Title = ChangelogHelpers.GetValue(entry, {"Subtitle", "Header"}) or "Update Notes",
+					Title = ChangelogHelpers.GetValue(entry, {"Subtitle", "Header"})
+						or (ChangelogHelpers.IsReleaseEntry(entry) and "Script Release" or "What's Changed"),
 					Content = ChangelogHelpers.FormatContent(entry)
 				})
 				ChangelogHelpers.SetParagraphVisible(details, expanded)
