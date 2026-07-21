@@ -987,10 +987,10 @@ local AccountPanelName = "Reverb Account"
 local SettingsPanelName = "Reverb Settings"
 local AccountLinks = {
 	Premium = "https://rbxreverb.com/product/premium",
-	Discord = "https://discord.com/invite/TpJd6E8vKZ",
-	DiscordInviteCode = "TpJd6E8vKZ",
+	Discord = "https://discord.gg/xKh6WsgJem",
+	DiscordInviteCode = "xKh6WsgJem",
 	Blog = "https://rbxreverb.com/blog",
-	ReportBug = "https://discord.com/invite/TpJd6E8vKZ",
+	ReportBug = "https://discord.gg/xKh6WsgJem",
 }
 local updateStatsText = function() end
 local updateScrollCue = function() end
